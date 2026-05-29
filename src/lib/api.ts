@@ -1,13 +1,59 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status?: number,
+    public code?: string,
+    public isUnavailable = false
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+export function isBackendUnavailable(message: string): boolean {
+  return ["Failed to fetch", "NetworkError", "Load failed", "CORS"].some((keyword) =>
+    message.includes(keyword)
+  );
+}
+
+type ApiEnvelope<T = unknown> = {
+  code?: string;
+  info?: string;
+  data?: T;
+  [key: string]: unknown;
+};
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    ...options,
-  });
-  if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
-  const json = await res.json();
-  return json.data !== undefined ? json.data : json;
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      ...options,
+    });
+    const text = await res.text();
+    let json: ApiEnvelope<T> = {};
+    if (text) {
+      try {
+        json = JSON.parse(text);
+      } catch {
+        json = { info: text };
+      }
+    }
+    if (!res.ok) {
+      throw new ApiError(json.info || `API ${res.status}: ${res.statusText}`, res.status, json.code);
+    }
+    if (json.code && json.code !== "0000") {
+      throw new ApiError(json.info || "请求失败", res.status, json.code);
+    }
+    return json.data !== undefined ? json.data : (json as T);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    const message = error instanceof Error ? error.message : "未知错误";
+    throw new ApiError(`请求失败: ${message}`, undefined, undefined, isBackendUnavailable(message));
+  }
 }
 
 // Dashboard

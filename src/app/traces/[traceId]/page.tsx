@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { queryApi, type FullTrace } from "@/lib/api";
 
 export default function TraceDetailPage() {
@@ -13,11 +12,7 @@ export default function TraceDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (traceId) loadTrace();
-  }, [traceId]);
-
-  async function loadTrace() {
+  const loadTrace = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -28,7 +23,13 @@ export default function TraceDetailPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [traceId]);
+
+  useEffect(() => {
+    if (traceId) {
+      void Promise.resolve().then(loadTrace);
+    }
+  }, [traceId, loadTrace]);
 
   if (loading) return <div className="p-6 text-center text-muted-foreground">加载中...</div>;
   if (error) return <div className="p-6 text-center text-red-500">{error}</div>;

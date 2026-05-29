@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ReactECharts from "echarts-for-react";
@@ -15,11 +15,7 @@ export default function DashboardPage() {
   const [days, setDays] = useState("1");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadAll();
-  }, [days]);
-
-  async function loadAll() {
+  const loadAll = useCallback(async () => {
     setLoading(true);
     try {
       const d = parseInt(days);
@@ -38,7 +34,11 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [days]);
+
+  useEffect(() => {
+    void Promise.resolve().then(loadAll);
+  }, [loadAll]);
 
   const trendOption = {
     tooltip: { trigger: "axis" },

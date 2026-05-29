@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,11 +14,7 @@ export default function EvalTaskDetailPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (taskId) loadData();
-  }, [taskId]);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [t, r] = await Promise.all([
@@ -31,7 +27,13 @@ export default function EvalTaskDetailPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [taskId]);
+
+  useEffect(() => {
+    if (taskId) {
+      void Promise.resolve().then(loadData);
+    }
+  }, [taskId, loadData]);
 
   async function runEvaluation() {
     try {

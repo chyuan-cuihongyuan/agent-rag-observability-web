@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,11 +11,7 @@ export default function SessionDetailPage() {
   const [traces, setTraces] = useState<AgentDecision[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (sessionId) loadTraces();
-  }, [sessionId]);
-
-  async function loadTraces() {
+  const loadTraces = useCallback(async () => {
     setLoading(true);
     try {
       const data = await queryApi.bySession(decodeURIComponent(sessionId));
@@ -25,7 +21,13 @@ export default function SessionDetailPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (sessionId) {
+      void Promise.resolve().then(loadTraces);
+    }
+  }, [sessionId, loadTraces]);
 
   return (
     <div className="p-6 space-y-6">

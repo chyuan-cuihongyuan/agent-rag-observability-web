@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,11 +17,7 @@ export default function TracesPage() {
   const [sessionId, setSessionId] = useState("");
   const [userId, setUserId] = useState("");
 
-  useEffect(() => {
-    search();
-  }, [page]);
-
-  async function search() {
+  const search = useCallback(async () => {
     setLoading(true);
     try {
       const result = await queryApi.traceList({
@@ -39,7 +35,11 @@ export default function TracesPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [page, sessionId, userId]);
+
+  useEffect(() => {
+    void Promise.resolve().then(search);
+  }, [search]);
 
   function goTrace() {
     if (traceIdInput.trim()) {
