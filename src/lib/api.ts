@@ -1,23 +1,50 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
+/**
+ * API 统一错误类
+ * - httpStatus: HTTP 状态码（如 404、500）
+ * - code: 业务错误码（如 "0000" 表示成功）
+ * - message: 可读的错误描述
+ */
 export class ApiError extends Error {
+  /** HTTP 状态码 */
+  public readonly httpStatus?: number;
+  /** 业务错误码 */
+  public readonly code?: string;
+  /** 后端是否不可用（网络错误 / CORS / 服务未启动） */
+  public readonly isUnavailable: boolean;
+
   constructor(
     message: string,
-    public status?: number,
-    public code?: string,
-    public isUnavailable = false
+    httpStatus?: number,
+    code?: string,
+    isUnavailable = false
   ) {
     super(message);
     this.name = "ApiError";
+    this.httpStatus = httpStatus;
+    this.code = code;
+    this.isUnavailable = isUnavailable;
   }
 }
 
+/**
+ * 判断错误消息是否表示后端服务不可用
+ */
 export function isBackendUnavailable(message: string): boolean {
   return ["Failed to fetch", "NetworkError", "Load failed", "CORS"].some((keyword) =>
     message.includes(keyword)
   );
 }
 
+/**
+ * 判断传入的错误是否为后端不可用错误
+ */
+export function isApiUnavailableError(error: unknown): boolean {
+  return error instanceof ApiError && error.isUnavailable;
+}
+
+/** 标准后端响应信封格式 { code, info, data } */
 type ApiEnvelope<T = unknown> = {
   code?: string;
   info?: string;
@@ -25,34 +52,70 @@ type ApiEnvelope<T = unknown> = {
   [key: string]: unknown;
 };
 
+/**
+ * 解析 JSON 响应，兼容两种格式：
+ * 1. 标准信封格式：{ code: "0000", info: "success", data: {...} }
+ * 2. 直接数据格式：{ ... }（无 code/info/data 包装）
+ */
+function parseResponse<T>(text: string, httpStatus: number): T {
+  let json: ApiEnvelope<T>;
+
+  if (!text) {
+    throw new ApiError(`API ${httpStatus}: 无响应内容`, httpStatus);
+  }
+
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new ApiError(`API ${httpStatus}: 响应解析失败`, httpStatus);
+  }
+
+  // 检查是否为标准信封格式（包含 code 字段）
+  if ("code" in json && json.code !== undefined) {
+    if (json.code !== "0000") {
+      throw new ApiError(json.info || "请求失败", httpStatus, json.code);
+    }
+    // 标准格式：返回 data 字段的内容
+    return json.data !== undefined ? json.data : ({} as T);
+  }
+
+  // 直接数据格式：返回整个 JSON 对象
+  return json as T;
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   try {
     const res = await fetch(`${API_BASE}${path}`, {
       headers: { "Content-Type": "application/json", ...options?.headers },
       ...options,
     });
+
     const text = await res.text();
-    let json: ApiEnvelope<T> = {};
-    if (text) {
-      try {
-        json = JSON.parse(text);
-      } catch {
-        json = { info: text };
-      }
-    }
+
+    // HTTP 层面失败（4xx / 5xx）
     if (!res.ok) {
-      throw new ApiError(json.info || `API ${res.status}: ${res.statusText}`, res.status, json.code);
+      let errorMessage = `API ${res.status}: ${res.statusText}`;
+      try {
+        const errorJson = JSON.parse(text);
+        if (errorJson.info) errorMessage = errorJson.info;
+      } catch {
+        // 响应不是 JSON，使用默认错误信息
+      }
+      throw new ApiError(errorMessage, res.status, undefined);
     }
-    if (json.code && json.code !== "0000") {
-      throw new ApiError(json.info || "请求失败", res.status, json.code);
-    }
-    return json.data !== undefined ? json.data : (json as T);
+
+    return parseResponse<T>(text, res.status);
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
     }
     const message = error instanceof Error ? error.message : "未知错误";
-    throw new ApiError(`请求失败: ${message}`, undefined, undefined, isBackendUnavailable(message));
+    throw new ApiError(
+      `请求失败: ${message}`,
+      undefined,
+      undefined,
+      isBackendUnavailable(message)
+    );
   }
 }
 
