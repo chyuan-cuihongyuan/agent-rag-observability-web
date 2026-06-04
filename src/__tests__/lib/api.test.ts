@@ -554,6 +554,7 @@ describe("API 客户端单元测试", () => {
 
       await expect(dashboardApi.overview()).rejects.toThrow("资源不存在");
 
+      mockFetch.mockResolvedValueOnce(createErrorResponse(404, "资源不存在"));
       try {
         await dashboardApi.overview();
       } catch (error) {
