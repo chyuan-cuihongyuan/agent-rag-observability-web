@@ -315,6 +315,7 @@ export interface EvalResult {
   completenessScore: number;
   overallScore: number;
   evalDetail: string;
+  [key: string]: unknown; // 允许额外字段
 }
 
 export interface CompareItem {
