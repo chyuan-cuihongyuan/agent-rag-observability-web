@@ -206,11 +206,40 @@ export interface FullTrace {
   traceId: string;
   sessionId: string;
   ownerUserId: string;
+  agentId: string;
   sourceService: string;
   createTime: string;
   agentDecision: Record<string, unknown> | null;
   ragRetrieval: Record<string, unknown> | null;
   chatResult: Record<string, unknown> | null;
+  toolCalls: ToolCallLog[] | null;
+  memoryRecall: MemoryRecallLog | null;
+}
+
+export interface ToolCallLog {
+  traceId: string;
+  spanId: string;
+  parentSpanId: string;
+  toolName: string;
+  toolInput: string;
+  toolOutput: string;
+  status: 'SUCCESS' | 'FAIL' | 'TIMEOUT';
+  costTimeMs: number;
+  errorMessage: string;
+  callOrder: number;
+  createTime: string;
+}
+
+export interface MemoryRecallLog {
+  traceId: string;
+  queryText: string;
+  sessionMemoryCount: number;
+  agentMemoryCount: number;
+  sessionMemoryScores: number[];
+  agentMemoryScores: number[];
+  injectContent: string;
+  costTimeMs: number;
+  createTime: string;
 }
 
 export interface TraceQuery {
@@ -233,9 +262,12 @@ export interface TraceListItem {
   ownerUserId: string;
   sourceService: string;
   agentId: string;
+  userQuery: string;
   intentType: string;
+  branchType: string;
   agentStatus: string;
   costTimeMs: number;
+  modelVersion: string;
   createTime: string;
 }
 
@@ -311,11 +343,24 @@ export interface EvalResult {
   answerSimilarity: number;
   faithfulnessScore: number;
   relevanceScore: number;
-  hallucinationFlag: boolean;
+  hallucinationFlag: number;
   completenessScore: number;
   overallScore: number;
   evalDetail: string;
-  [key: string]: unknown; // 允许额外字段
+  createTime: string;
+
+  // 工具调用评测字段
+  toolSelectionScore?: number;
+  toolParamScore?: number;
+  toolCallScore?: number;
+
+  // Agent 决策评测字段
+  intentScore?: number;
+  branchScore?: number;
+  reasoningScore?: number;
+  agentDecisionScore?: number;
+
+  [key: string]: unknown;
 }
 
 export interface CompareItem {

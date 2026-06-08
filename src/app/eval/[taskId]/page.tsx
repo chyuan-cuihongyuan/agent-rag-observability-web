@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { evalApi, type EvalTaskDetail, type EvalResult } from "@/lib/api";
+import {useCallback, useEffect, useState} from "react";
+import {useParams} from "next/navigation";
+import Link from "next/link";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {Badge} from "@/components/ui/badge";
+import {Button} from "@/components/ui/button";
+import {evalApi, type EvalResult, type EvalTaskDetail} from "@/lib/api";
 
 export default function EvalTaskDetailPage() {
   const { taskId } = useParams<{ taskId: string }>();
@@ -116,7 +117,7 @@ export default function EvalTaskDetailPage() {
             <div className="grid grid-cols-4 gap-4 text-sm">
               <div><p className="text-xs text-muted-foreground">任务ID</p><p className="font-mono">{task.taskId}</p></div>
               <div><p className="text-xs text-muted-foreground">任务名称</p><p>{task.taskName}</p></div>
-              <div><p className="text-xs text-muted-foreground">评测类型</p><p>{task.evalType}</p></div>
+              <div><p className="text-xs text-muted-foreground">评测类型</p><p><EvalTypeBadge type={task.evalType} /></p></div>
               <div><p className="text-xs text-muted-foreground">模型版本</p><p>{task.modelVersion || "-"}</p></div>
               <div><p className="text-xs text-muted-foreground">RAG策略</p><p>{task.ragStrategyVersion || "-"}</p></div>
               <div><p className="text-xs text-muted-foreground">数据集ID</p><p className="font-mono">{task.datasetId}</p></div>
@@ -142,27 +143,7 @@ export default function EvalTaskDetailPage() {
             <>
               <div className="space-y-3">
                 {results.map((r, i) => (
-                  <div key={i} className="border rounded-lg p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">{r.queryText}</p>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-sm font-mono ${r.overallScore >= 0.8 ? "text-green-600" : r.overallScore >= 0.6 ? "text-yellow-600" : "text-red-500"}`}>
-                          {r.overallScore?.toFixed(3) ?? "-"}
-                        </span>
-                        {r.hallucinationFlag && <Badge variant="destructive" className="text-xs">幻觉</Badge>}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
-                      <span>召回 {r.recallScore?.toFixed(3) ?? "-"}</span>
-                      <span>精确 {r.precisionScore?.toFixed(3) ?? "-"}</span>
-                      <span>F1 {r.f1Score?.toFixed(3) ?? "-"}</span>
-                      <span>Top3 {r.top3HitRate?.toFixed(3) ?? "-"}</span>
-                      <span>忠实 {r.faithfulnessScore?.toFixed(3) ?? "-"}</span>
-                      <span>相关 {r.relevanceScore?.toFixed(3) ?? "-"}</span>
-                      <span>完整 {r.completenessScore?.toFixed(3) ?? "-"}</span>
-                      <span>相似 {r.answerSimilarity?.toFixed(3) ?? "-"}</span>
-                    </div>
-                  </div>
+                  <ResultCard key={i} result={r} evalType={task?.evalType} />
                 ))}
               </div>
 
@@ -184,6 +165,82 @@ export default function EvalTaskDetailPage() {
   );
 }
 
+/** 单条评测结果卡片 */
+function ResultCard({ result, evalType }: { result: EvalResult; evalType?: string }) {
+  return (
+    <div className="border rounded-lg p-4 space-y-3">
+      {/* 查询和分数 */}
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <p className="text-sm font-medium">{result.queryText}</p>
+          {result.traceId && (
+            <Link
+              href={`/traces/${result.traceId}`}
+              className="text-xs text-blue-600 hover:underline font-mono"
+            >
+              查看 Trace: {result.traceId.slice(0, 16)}...
+            </Link>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`text-lg font-mono font-bold ${getScoreColor(result.overallScore)}`}>
+            {result.overallScore?.toFixed(3) ?? "-"}
+          </span>
+          {result.hallucinationFlag === 1 && <Badge variant="destructive" className="text-xs">幻觉</Badge>}
+        </div>
+      </div>
+
+      {/* 检索指标 */}
+      <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
+        <span>召回 {result.recallScore?.toFixed(3) ?? "-"}</span>
+        <span>精确 {result.precisionScore?.toFixed(3) ?? "-"}</span>
+        <span>F1 {result.f1Score?.toFixed(3) ?? "-"}</span>
+        <span>Top3 {result.top3HitRate?.toFixed(3) ?? "-"}</span>
+      </div>
+
+      {/* 答案质量指标 */}
+      <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
+        <span>忠实 {result.faithfulnessScore?.toFixed(3) ?? "-"}</span>
+        <span>相关 {result.relevanceScore?.toFixed(3) ?? "-"}</span>
+        <span>完整 {result.completenessScore?.toFixed(3) ?? "-"}</span>
+        <span>相似 {result.answerSimilarity?.toFixed(3) ?? "-"}</span>
+      </div>
+
+      {/* 工具调用评测指标（TOOL_CALL 类型） */}
+      {evalType === "TOOL_CALL" && result.toolCallScore != null && (
+        <div className="pt-2 border-t">
+          <p className="text-xs font-medium text-muted-foreground mb-1">工具调用评测</p>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <span>工具选择 <span className="font-mono">{result.toolSelectionScore?.toFixed(3) ?? "-"}</span></span>
+            <span>参数正确 <span className="font-mono">{result.toolParamScore?.toFixed(3) ?? "-"}</span></span>
+            <span>综合 <span className="font-mono font-bold">{result.toolCallScore?.toFixed(3) ?? "-"}</span></span>
+          </div>
+        </div>
+      )}
+
+      {/* Agent 决策评测指标（AGENT_DECISION 类型） */}
+      {evalType === "AGENT_DECISION" && result.agentDecisionScore != null && (
+        <div className="pt-2 border-t">
+          <p className="text-xs font-medium text-muted-foreground mb-1">Agent 决策评测</p>
+          <div className="grid grid-cols-4 gap-2 text-xs">
+            <span>意图识别 <span className="font-mono">{result.intentScore?.toFixed(3) ?? "-"}</span></span>
+            <span>分支选择 <span className="font-mono">{result.branchScore?.toFixed(3) ?? "-"}</span></span>
+            <span>推理质量 <span className="font-mono">{result.reasoningScore?.toFixed(3) ?? "-"}</span></span>
+            <span>综合 <span className="font-mono font-bold">{result.agentDecisionScore?.toFixed(3) ?? "-"}</span></span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function getScoreColor(score?: number): string {
+  if (!score) return "text-gray-500";
+  if (score >= 0.8) return "text-green-600";
+  if (score >= 0.6) return "text-yellow-600";
+  return "text-red-500";
+}
+
 function TaskStatusBadge({ status }: { status: string }) {
   const map: Record<string, "default" | "secondary" | "destructive"> = {
     PENDING: "secondary",
@@ -192,4 +249,15 @@ function TaskStatusBadge({ status }: { status: string }) {
     FAILED: "destructive",
   };
   return <Badge variant={map[status] ?? "secondary"}>{status}</Badge>;
+}
+
+function EvalTypeBadge({ type }: { type?: string }) {
+  const map: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
+    RAG_RETRIEVAL: { label: "RAG 检索", variant: "default" },
+    ANSWER_QUALITY: { label: "答案质量", variant: "secondary" },
+    TOOL_CALL: { label: "工具调用", variant: "outline" },
+    AGENT_DECISION: { label: "Agent 决策", variant: "outline" },
+  };
+  const info = map[type || ""] || { label: type || "-", variant: "secondary" as const };
+  return <Badge variant={info.variant}>{info.label}</Badge>;
 }

@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import {useCallback, useEffect, useState} from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { queryApi, type TraceListItem } from "@/lib/api";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {Input} from "@/components/ui/input";
+import {Button} from "@/components/ui/button";
+import {Badge} from "@/components/ui/badge";
+import {queryApi, type TraceListItem} from "@/lib/api";
 
 export default function TracesPage() {
   const [traces, setTraces] = useState<TraceListItem[]>([]);
@@ -16,6 +16,9 @@ export default function TracesPage() {
   const [traceIdInput, setTraceIdInput] = useState("");
   const [sessionId, setSessionId] = useState("");
   const [userId, setUserId] = useState("");
+  const [agentId, setAgentId] = useState("");
+  const [branchType, setBranchType] = useState("");
+  const [agentStatus, setAgentStatus] = useState("");
 
   const search = useCallback(async () => {
     setLoading(true);
@@ -23,6 +26,9 @@ export default function TracesPage() {
       const result = await queryApi.traceList({
         sessionId: sessionId || undefined,
         ownerUserId: userId || undefined,
+        agentId: agentId || undefined,
+        branchType: branchType || undefined,
+        agentStatus: agentStatus || undefined,
         page,
         size: 20,
       });
@@ -35,7 +41,7 @@ export default function TracesPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, sessionId, userId]);
+  }, [page, sessionId, userId, agentId, branchType, agentStatus]);
 
   useEffect(() => {
     void Promise.resolve().then(search);
@@ -75,7 +81,7 @@ export default function TracesPage() {
       <Card>
         <CardHeader><CardTitle className="text-base">筛选条件</CardTitle></CardHeader>
         <CardContent>
-          <div className="flex gap-3 items-end">
+          <div className="grid grid-cols-4 gap-3 items-end">
             <div>
               <label className="text-xs text-muted-foreground">SessionID</label>
               <Input placeholder="sessionId" value={sessionId} onChange={(e) => setSessionId(e.target.value)} />
@@ -84,7 +90,52 @@ export default function TracesPage() {
               <label className="text-xs text-muted-foreground">UserID</label>
               <Input placeholder="userId" value={userId} onChange={(e) => setUserId(e.target.value)} />
             </div>
-            <Button onClick={() => { setPage(1); search(); }}>查询</Button>
+            <div>
+              <label className="text-xs text-muted-foreground">Agent ID</label>
+              <Input placeholder="agentId" value={agentId} onChange={(e) => setAgentId(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">分支类型</label>
+              <select
+                className="w-full h-10 px-3 rounded-md border bg-background text-sm"
+                value={branchType}
+                onChange={(e) => setBranchType(e.target.value)}
+              >
+                <option value="">全部</option>
+                <option value="RAG">RAG</option>
+                <option value="DIRECT_ANSWER">直接回答</option>
+                <option value="TOOL_CALL">工具调用</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">状态</label>
+              <select
+                className="w-full h-10 px-3 rounded-md border bg-background text-sm"
+                value={agentStatus}
+                onChange={(e) => setAgentStatus(e.target.value)}
+              >
+                <option value="">全部</option>
+                <option value="SUCCESS">成功</option>
+                <option value="FAIL">失败</option>
+              </select>
+            </div>
+            <div className="col-span-3">
+              <Button onClick={() => { setPage(1); search(); }}>查询</Button>
+              <Button
+                variant="outline"
+                className="ml-2"
+                onClick={() => {
+                  setSessionId("");
+                  setUserId("");
+                  setAgentId("");
+                  setBranchType("");
+                  setAgentStatus("");
+                  setPage(1);
+                }}
+              >
+                重置
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -101,38 +152,50 @@ export default function TracesPage() {
           ) : traces.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">暂无数据</div>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th className="py-2 pr-4">TraceID</th>
-                  <th className="py-2 pr-4">SessionID</th>
-                  <th className="py-2 pr-4">Agent</th>
-                  <th className="py-2 pr-4">状态</th>
-                  <th className="py-2 pr-4">耗时</th>
-                  <th className="py-2 pr-4">来源</th>
-                  <th className="py-2">时间</th>
-                </tr>
-              </thead>
-              <tbody>
-                {traces.map((t, i) => (
-                  <tr key={i} className="border-b last:border-0 hover:bg-muted/50">
-                    <td className="py-2 pr-4">
-                      <Link href={`/traces/${t.traceId}`} className="text-blue-600 hover:underline font-mono text-xs">
-                        {t.traceId?.slice(0, 12)}...
-                      </Link>
-                    </td>
-                    <td className="py-2 pr-4 font-mono text-xs">{t.sessionId?.slice(0, 12)}...</td>
-                    <td className="py-2 pr-4">{t.agentId}</td>
-                    <td className="py-2 pr-4">
-                      <StatusBadge status={t.agentStatus} />
-                    </td>
-                    <td className="py-2 pr-4 font-mono">{t.costTimeMs}ms</td>
-                    <td className="py-2 pr-4">{t.sourceService}</td>
-                    <td className="py-2 text-xs text-muted-foreground">{t.createTime}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-muted-foreground">
+                    <th className="py-2 pr-4">用户问题</th>
+                    <th className="py-2 pr-4">TraceID</th>
+                    <th className="py-2 pr-4">SessionID</th>
+                    <th className="py-2 pr-4">Agent</th>
+                    <th className="py-2 pr-4">分支</th>
+                    <th className="py-2 pr-4">状态</th>
+                    <th className="py-2 pr-4">耗时</th>
+                    <th className="py-2 pr-4">来源</th>
+                    <th className="py-2">时间</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {traces.map((t, i) => (
+                    <tr key={i} className="border-b last:border-0 hover:bg-muted/50">
+                      <td className="py-2 pr-4 max-w-xs truncate">
+                        <Link href={`/traces/${t.traceId}`} className="hover:underline" title={t.userQuery}>
+                          {t.userQuery ? truncate(t.userQuery, 30) : "-"}
+                        </Link>
+                      </td>
+                      <td className="py-2 pr-4">
+                        <Link href={`/traces/${t.traceId}`} className="text-blue-600 hover:underline font-mono text-xs">
+                          {t.traceId?.slice(0, 12)}...
+                        </Link>
+                      </td>
+                      <td className="py-2 pr-4 font-mono text-xs">{t.sessionId?.slice(0, 12)}...</td>
+                      <td className="py-2 pr-4">{t.agentId}</td>
+                      <td className="py-2 pr-4">
+                        <BranchBadge branch={t.branchType} />
+                      </td>
+                      <td className="py-2 pr-4">
+                        <StatusBadge status={t.agentStatus} />
+                      </td>
+                      <td className="py-2 pr-4 font-mono">{t.costTimeMs}ms</td>
+                      <td className="py-2 pr-4">{t.sourceService}</td>
+                      <td className="py-2 text-xs text-muted-foreground">{t.createTime}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
 
           {/* Pagination */}
@@ -158,4 +221,25 @@ export default function TracesPage() {
 function StatusBadge({ status }: { status: string }) {
   const variant = status === "SUCCESS" ? "default" : status === "FAIL" ? "destructive" : "secondary";
   return <Badge variant={variant as "default" | "destructive" | "secondary"}>{status}</Badge>;
+}
+
+function BranchBadge({ branch }: { branch?: string }) {
+  if (!branch) return <span>-</span>;
+
+  const colorMap: Record<string, string> = {
+    RAG: "bg-blue-100 text-blue-800",
+    DIRECT_ANSWER: "bg-green-100 text-green-800",
+    TOOL_CALL: "bg-orange-100 text-orange-800",
+  };
+
+  return (
+    <span className={`px-2 py-0.5 rounded text-xs ${colorMap[branch] || "bg-gray-100 text-gray-800"}`}>
+      {branch}
+    </span>
+  );
+}
+
+function truncate(text: string, maxLen: number): string {
+  if (!text) return "-";
+  return text.length > maxLen ? text.slice(0, maxLen) + "..." : text;
 }
