@@ -45,52 +45,52 @@ export default function TraceDetailPage() {
       </div>
 
       {/* 用户问题 - 突出展示 */}
-      <UserQuestion question={trace.agentDecision?.userQuery as string} />
+      <UserQuestion question={trace.agentDecision?.userQuery} />
 
       {/* 全链路瀑布图 - 核心可视化 */}
       <TraceWaterfall trace={trace} />
 
       {/* 错误信息高亮 */}
       <ErrorHighlight
-        status={trace.agentDecision?.agentStatus as string}
-        errorMessage={trace.agentDecision?.errorMessage as string}
+        status={trace.agentDecision?.agentStatus}
+        errorMessage={trace.agentDecision?.errorMessage}
       />
 
       {/* Agent 推理过程 */}
-      <AgentThought thought={trace.agentDecision?.decisionReason as string} />
+      <AgentThought thought={trace.agentDecision?.decisionReason} />
 
       {/* 工具调用详情 */}
       <ToolCallDetail toolCalls={trace.toolCalls} />
 
       {/* Query 改写对比 */}
       <QueryRewriteCompare
-        original={trace.ragRetrieval?.queryText as string}
-        rewritten={trace.ragRetrieval?.rewriteText as string}
+        original={trace.ragRetrieval?.queryText}
+        rewritten={trace.ragRetrieval?.rewriteText}
       />
 
       {/* RAG 阶段耗时 */}
-      <RetrievalStageChart stages={trace.ragRetrieval?.retrievalStages as string} />
+      <RetrievalStageChart stages={trace.ragRetrieval?.retrievalStages} />
 
       {/* 引用来源 */}
-      <SourceDocTable sourceDocs={trace.ragRetrieval?.sourceDocs as string} />
+      <SourceDocTable sourceDocs={trace.ragRetrieval?.sourceDocs} />
 
       {/* 记忆检索 */}
-      <MemoryRecall recall={trace.memoryRecall} />
+      <MemoryRecallList recalls={trace.memoryRecalls} />
 
       {/* 最终答案 - 突出展示 */}
-      <FinalAnswer answer={trace.chatResult?.answer as string} />
+      <FinalAnswer answer={trace.chatResult?.answer} />
 
       {/* Token 消耗 */}
       <TokenUsage
-        promptTokens={trace.chatResult?.promptTokens as number}
-        completionTokens={trace.chatResult?.completionTokens as number}
+        promptTokens={trace.chatResult?.promptTokens}
+        completionTokens={trace.chatResult?.completionTokens}
       />
 
       {/* 状态信息 */}
       <StatusInfo
-        status={trace.agentDecision?.agentStatus as string}
-        costTimeMs={trace.agentDecision?.costTimeMs as number}
-        modelVersion={trace.chatResult?.modelVersion as string}
+        status={trace.agentDecision?.agentStatus}
+        costTimeMs={trace.agentDecision?.costTimeMs}
+        modelVersion={trace.chatResult?.modelVersion}
         agentId={trace.agentId}
         sourceService={trace.sourceService}
         createTime={trace.createTime}
@@ -313,15 +313,27 @@ function SourceDocTable({ sourceDocs }: { sourceDocs?: string }) {
   );
 }
 
-/** 记忆检索结果 */
-function MemoryRecall({ recall }: { recall: MemoryRecallLog | null }) {
-  if (!recall) return null;
+/** 记忆检索结果（支持多条） */
+function MemoryRecallList({ recalls }: { recalls: MemoryRecallLog[] | null }) {
+  if (!recalls || recalls.length === 0) return null;
+
+  return (
+    <>
+      {recalls.map((recall, idx) => (
+        <MemoryRecallCard key={idx} recall={recall} index={idx} />
+      ))}
+    </>
+  );
+}
+
+/** 记忆检索卡片 */
+function MemoryRecallCard({ recall, index }: { recall: MemoryRecallLog; index: number }) {
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
-          <span className="text-pink-500">M</span> 记忆检索
+          <span className="text-pink-500">M</span> 记忆检索 #{index + 1}
         </CardTitle>
       </CardHeader>
       <CardContent>

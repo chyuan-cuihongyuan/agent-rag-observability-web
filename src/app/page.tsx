@@ -152,7 +152,7 @@ export default function DashboardPage() {
               {errors.slice(0, 10).map((e, i) => (
                 <div key={i} className="flex items-center gap-3 text-sm py-2 border-b last:border-0">
                   <span className="w-6 text-center font-mono text-muted-foreground">{i + 1}</span>
-                  <span className="flex-1 truncate text-red-600">{e.error_message || e.agentStatus || "-"}</span>
+                  <span className="flex-1 truncate text-red-600">{e.error_message || "-"}</span>
                   <span className="text-muted-foreground">{e.agent_id || ""}</span>
                   <span className="font-mono">{e.count}次</span>
                 </div>

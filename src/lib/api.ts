@@ -197,24 +197,9 @@ export interface ToolItem {
 }
 
 export interface ErrorItem {
-  agentStatus: string;
+  error_message: string;
   count: number;
-  agent_id?: string;
-  error_message?: string;
-}
-
-export interface FullTrace {
-  traceId: string;
-  sessionId: string;
-  ownerUserId: string;
-  agentId: string;
-  sourceService: string;
-  createTime: string;
-  agentDecision: Record<string, unknown> | null;
-  ragRetrieval: Record<string, unknown> | null;
-  chatResult: Record<string, unknown> | null;
-  toolCalls: ToolCallLog[] | null;
-  memoryRecall: MemoryRecallLog | null;
+  agent_id: string;
 }
 
 export interface ToolCallLog {
@@ -241,6 +226,69 @@ export interface MemoryRecallLog {
   injectContent: string;
   costTimeMs: number;
   createTime: string;
+}
+
+/** Agent 决策数据 */
+export interface AgentDecisionData {
+  traceId: string;
+  sessionId?: string;
+  agentId?: string;
+  userQuery?: string;
+  intentType?: string;
+  selectedToolList?: string[];
+  decisionReason?: string;
+  branchType?: string;
+  planSteps?: string;
+  toolCallTimes?: number;
+  toolRetryTimes?: number;
+  agentStatus?: string;
+  costTimeMs?: number;
+  modelVersion?: string;
+  errorMessage?: string;
+  createTime?: string;
+}
+
+/** RAG 检索数据 */
+export interface RagRetrievalData {
+  traceId?: string;
+  queryText?: string;
+  rewriteText?: string;
+  retrievalTopk?: number;
+  retrievalCount?: number;
+  sourceDocs?: string;
+  rerankScores?: string;
+  emptyRetrieval?: number;
+  retrievalCostMs?: number;
+  retrievalStages?: string;
+  ragStrategyVersion?: string;
+  createTime?: string;
+}
+
+/** 聊天结果数据 */
+export interface ChatResultData {
+  traceId?: string;
+  question?: string;
+  answer?: string;
+  promptTokens?: number;
+  completionTokens?: number;
+  totalCostTimeMs?: number;
+  finalStatus?: string;
+  modelVersion?: string;
+  createTime?: string;
+}
+
+export interface FullTrace {
+  traceId: string;
+  sessionId: string;
+  ownerUserId: string;
+  agentId: string;
+  sourceService: string;
+  createTime: string;
+  agentDecision: AgentDecisionData | null;
+  ragRetrieval: RagRetrievalData | null;
+  chatResult: ChatResultData | null;
+  toolCalls: ToolCallLog[] | null;
+  memoryRecalls: MemoryRecallLog[] | null;
 }
 
 export interface TraceQuery {

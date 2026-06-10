@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { FullTrace, ToolCallLog, MemoryRecallLog } from "@/lib/api";
@@ -17,7 +18,7 @@ interface WaterfallStage {
  * 展示从用户输入到最终答案的每一步耗时，形成水平瀑布图
  */
 export function TraceWaterfall({ trace }: { trace: FullTrace }) {
-  const stages = buildStages(trace);
+  const stages = useMemo(() => buildStages(trace), [trace]);
   if (stages.length === 0) return null;
 
   const totalCost = stages.reduce((sum, s) => sum + s.costMs, 0);
@@ -110,10 +111,10 @@ function buildStages(trace: FullTrace): WaterfallStage[] {
   const stages: WaterfallStage[] = [];
 
   // 1. Agent 决策（意图识别 + 分支选择）
-  const agentCost = trace.agentDecision?.costTimeMs as number | undefined;
+  const agentCost = trace.agentDecision?.costTimeMs;
   if (agentCost && agentCost > 0) {
-    const branchType = trace.agentDecision?.branchType as string || "";
-    const intentType = trace.agentDecision?.intentType as string || "";
+    const branchType = trace.agentDecision?.branchType || "";
+    const intentType = trace.agentDecision?.intentType || "";
     stages.push({
       name: "Agent 决策",
       costMs: agentCost,
@@ -124,7 +125,7 @@ function buildStages(trace: FullTrace): WaterfallStage[] {
   }
 
   // 2. RAG 检索阶段（从 retrievalStages 解析）
-  const retrievalStagesStr = trace.ragRetrieval?.retrievalStages as string | undefined;
+  const retrievalStagesStr = trace.ragRetrieval?.retrievalStages;
   if (retrievalStagesStr) {
     try {
       const ragStages: Array<{ stage: string; count?: number; costMs?: number }> =
@@ -156,7 +157,7 @@ function buildStages(trace: FullTrace): WaterfallStage[] {
   }
 
   // 3. 工具调用
-  const toolCalls = trace.toolCalls as ToolCallLog[] | null;
+  const toolCalls = trace.toolCalls;
   if (toolCalls && toolCalls.length > 0) {
     for (const tc of toolCalls) {
       const statusIcon = tc.status === "SUCCESS" ? "\u2705" : "\u274C";
@@ -170,8 +171,9 @@ function buildStages(trace: FullTrace): WaterfallStage[] {
     }
   }
 
-  // 4. 记忆检索
-  const memoryRecall = trace.memoryRecall as MemoryRecallLog | null;
+  // 4. 记忆检索（取列表中第一条展示耗时）
+  const memoryRecalls = trace.memoryRecalls;
+  const memoryRecall = memoryRecalls && memoryRecalls.length > 0 ? memoryRecalls[0] : null;
   if (memoryRecall && memoryRecall.costTimeMs && memoryRecall.costTimeMs > 0) {
     const totalMemories =
       (memoryRecall.sessionMemoryCount || 0) + (memoryRecall.agentMemoryCount || 0);
@@ -185,14 +187,14 @@ function buildStages(trace: FullTrace): WaterfallStage[] {
   }
 
   // 5. LLM 生成
-  const totalCostMs = trace.chatResult?.totalCostTimeMs as number | undefined;
+  const totalCostMs = trace.chatResult?.totalCostTimeMs;
   if (totalCostMs && totalCostMs > 0) {
     // LLM 时间 = 总时间 - 已知各阶段时间（近似）
     const knownCost = stages.reduce((s, st) => s + st.costMs, 0);
     const llmCost = totalCostMs > knownCost ? totalCostMs - knownCost : totalCostMs;
-    const promptTokens = trace.chatResult?.promptTokens as number || 0;
-    const completionTokens = trace.chatResult?.completionTokens as number || 0;
-    const modelVersion = trace.chatResult?.modelVersion as string || "";
+    const promptTokens = trace.chatResult?.promptTokens || 0;
+    const completionTokens = trace.chatResult?.completionTokens || 0;
+    const modelVersion = trace.chatResult?.modelVersion || "";
     stages.push({
       name: "LLM 生成",
       costMs: llmCost,
