@@ -197,9 +197,10 @@ export interface ToolItem {
 }
 
 export interface ErrorItem {
-  error_message: string;
+  agentStatus: string;
   count: number;
-  agent_id: string;
+  agent_id?: string;
+  error_message?: string;
 }
 
 export interface FullTrace {

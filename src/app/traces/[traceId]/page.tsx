@@ -5,6 +5,8 @@ import {useParams} from "next/navigation";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Badge} from "@/components/ui/badge";
 import {type FullTrace, type MemoryRecallLog, queryApi, type ToolCallLog} from "@/lib/api";
+import {TraceWaterfall} from "@/components/trace/TraceWaterfall";
+import {ErrorHighlight} from "@/components/trace/ErrorHighlight";
 
 export default function TraceDetailPage() {
   const { traceId } = useParams<{ traceId: string }>();
@@ -44,6 +46,15 @@ export default function TraceDetailPage() {
 
       {/* 用户问题 - 突出展示 */}
       <UserQuestion question={trace.agentDecision?.userQuery as string} />
+
+      {/* 全链路瀑布图 - 核心可视化 */}
+      <TraceWaterfall trace={trace} />
+
+      {/* 错误信息高亮 */}
+      <ErrorHighlight
+        status={trace.agentDecision?.agentStatus as string}
+        errorMessage={trace.agentDecision?.errorMessage as string}
+      />
 
       {/* Agent 推理过程 */}
       <AgentThought thought={trace.agentDecision?.decisionReason as string} />
