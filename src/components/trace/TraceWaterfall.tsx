@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import type { FullTrace, ToolCallLog, MemoryRecallLog } from "@/lib/api";
+import { Card, CardContent, CardHeader, CardTitle } from "@chyuan/ui-kit";
+import { Badge } from "@chyuan/ui-kit";
+import type { FullTrace, ToolCallLog, MemoryRecallLog } from "@chyuan/ui-kit";
 
 interface WaterfallStage {
   name: string;

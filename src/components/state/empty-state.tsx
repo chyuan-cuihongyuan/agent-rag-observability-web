@@ -1,7 +1,7 @@
 "use client";
 
 import { Inbox } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@chyuan/ui-kit";
 
 interface EmptyStateProps {
   /** 提示文字，默认 "暂无数据" */

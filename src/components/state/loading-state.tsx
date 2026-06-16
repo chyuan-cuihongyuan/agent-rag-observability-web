@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@chyuan/ui-kit";
 
 interface LoadingStateProps {
   /** 提示文字，默认 "加载中..." */

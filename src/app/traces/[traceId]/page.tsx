@@ -2,9 +2,9 @@
 
 import {useCallback, useEffect, useState} from "react";
 import {useParams} from "next/navigation";
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import {Badge} from "@/components/ui/badge";
-import {type FullTrace, type MemoryRecallLog, queryApi, type ToolCallLog} from "@/lib/api";
+import {Card, CardContent, CardHeader, CardTitle} from "@chyuan/ui-kit";
+import {Badge} from "@chyuan/ui-kit";
+import {type FullTrace, type MemoryRecallLog, queryApi, type ToolCallLog} from "@chyuan/ui-kit";
 import {TraceWaterfall} from "@/components/trace/TraceWaterfall";
 import {ErrorHighlight} from "@/components/trace/ErrorHighlight";
 

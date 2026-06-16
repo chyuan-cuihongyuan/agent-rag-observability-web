@@ -1,7 +1,7 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@chyuan/ui-kit";
+import { Badge } from "@chyuan/ui-kit";
 
 /**
  * 错误信息高亮组件
