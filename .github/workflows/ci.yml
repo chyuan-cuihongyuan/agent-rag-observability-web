@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [online]
+  push:
+    branches: [online]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      # 拉取代码，保留完整历史以便增量分析与覆盖率比对
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 安装 Node.js 并启用 npm 依赖缓存，加速后续流水线
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # 基于 package-lock.json 安装依赖，保证可重复构建
+      - name: 安装依赖
+        run: npm ci
+
+      # ESLint 代码检查
+      - name: 代码检查
+        run: npm run lint
+
+      # Jest 单元测试
+      - name: 单元测试
+        run: npm test
+
+      # Next.js 生产构建验证
+      - name: 生产构建
+        run: npm run build
+
+      # 上传测试覆盖率报告（如存在）
+      - name: 上传覆盖率报告
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/**
+          if-no-files-found: ignore
