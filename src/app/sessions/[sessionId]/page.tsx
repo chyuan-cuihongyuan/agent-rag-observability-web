@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { queryApi, type AgentDecision } from "@/lib/api";
+import { Card, CardContent, CardHeader, CardTitle } from "@chyuan/ui-kit";
+import { queryApi, type AgentDecision } from "@chyuan/ui-kit";
 
 export default function SessionDetailPage() {
   const { sessionId } = useParams<{ sessionId: string }>();

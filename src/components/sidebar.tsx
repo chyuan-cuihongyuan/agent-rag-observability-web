@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { cn } from "@chyuan/ui-kit";
 
 const navItems = [
   { href: "/", label: "仪表盘", icon: "📊" },

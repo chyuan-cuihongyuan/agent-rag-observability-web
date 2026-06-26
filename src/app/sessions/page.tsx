@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { queryApi, type AgentDecision } from "@/lib/api";
+import { Card, CardContent, CardHeader, CardTitle } from "@chyuan/ui-kit";
+import { Input } from "@chyuan/ui-kit";
+import { Button } from "@chyuan/ui-kit";
+import { queryApi, type AgentDecision } from "@chyuan/ui-kit";
 
 export default function SessionsPage() {
   const [sessionId, setSessionId] = useState("");

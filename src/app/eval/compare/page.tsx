@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { evalApi, type EvalTaskDetail, type CompareItem } from "@/lib/api";
+import { Card, CardContent, CardHeader, CardTitle } from "@chyuan/ui-kit";
+import { Label } from "@chyuan/ui-kit";
+import { Button } from "@chyuan/ui-kit";
+import { Badge } from "@chyuan/ui-kit";
+import { evalApi, type EvalTaskDetail, type CompareItem } from "@chyuan/ui-kit";
 
 export default function EvalComparePage() {
   const [tasks, setTasks] = useState<EvalTaskDetail[]>([]);

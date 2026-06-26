@@ -3,10 +3,10 @@
 import {useCallback, useEffect, useState} from "react";
 import {useParams} from "next/navigation";
 import Link from "next/link";
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import {Badge} from "@/components/ui/badge";
-import {Button} from "@/components/ui/button";
-import {evalApi, type EvalResult, type EvalTaskDetail} from "@/lib/api";
+import {Card, CardContent, CardHeader, CardTitle} from "@chyuan/ui-kit";
+import {Badge} from "@chyuan/ui-kit";
+import {Button} from "@chyuan/ui-kit";
+import {evalApi, type EvalResult, type EvalTaskDetail} from "@chyuan/ui-kit";
 
 export default function EvalTaskDetailPage() {
   const { taskId } = useParams<{ taskId: string }>();

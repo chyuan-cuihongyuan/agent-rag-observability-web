@@ -2,19 +2,19 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@chyuan/ui-kit";
+import { Input } from "@chyuan/ui-kit";
+import { Button } from "@chyuan/ui-kit";
+import { Label } from "@chyuan/ui-kit";
+import { Badge } from "@chyuan/ui-kit";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { evalApi, type EvalDatasetDetail, type EvalTaskDetail } from "@/lib/api";
+} from "@chyuan/ui-kit";
+import { evalApi, type EvalDatasetDetail, type EvalTaskDetail } from "@chyuan/ui-kit";
 
 export default function EvalPage() {
   const [datasets, setDatasets] = useState<EvalDatasetDetail[]>([]);

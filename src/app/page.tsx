@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@chyuan/ui-kit";
+import { Tabs, TabsList, TabsTrigger } from "@chyuan/ui-kit";
 import ReactECharts from "echarts-for-react";
-import { dashboardApi, type Overview, type TrendItem, type BranchItem, type ToolItem, type ErrorItem } from "@/lib/api";
+import { dashboardApi, type Overview, type TrendItem, type BranchItem, type ToolItem, type ErrorItem } from "@chyuan/ui-kit";
 
 export default function DashboardPage() {
   const [overview, setOverview] = useState<Overview | null>(null);
