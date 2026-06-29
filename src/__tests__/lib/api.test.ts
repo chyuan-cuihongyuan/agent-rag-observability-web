@@ -264,10 +264,13 @@ describe("API 客户端单元测试", () => {
         sessionId: "session-abc",
         ownerUserId: "user-1",
         sourceService: "aiops-service",
+        agentId: "agent-1",
         createTime: "2024-01-01T00:00:00Z",
-        agentDecision: { intent: "RAG查询" },
-        ragRetrieval: { topK: 5 },
+        agentDecision: { traceId: "trace-123", intentType: "RAG查询" },
+        ragRetrieval: { retrievalTopk: 5 },
         chatResult: { answer: "回答内容" },
+        toolCalls: null,
+        memoryRecalls: null,
       };
       mockFetch.mockResolvedValueOnce(createEnvelopeResponse(mockTrace));
 
@@ -289,9 +292,12 @@ describe("API 客户端单元测试", () => {
             ownerUserId: "user-1",
             sourceService: "service-1",
             agentId: "agent-1",
+            userQuery: "测试问题",
             intentType: "RAG",
+            branchType: "RAG",
             agentStatus: "SUCCESS",
             costTimeMs: 200,
+            modelVersion: "gpt-4",
             createTime: "2024-01-01T00:00:00Z",
           },
         ],
@@ -493,10 +499,11 @@ describe("API 客户端单元测试", () => {
         answerSimilarity: 0.88,
         faithfulnessScore: 0.92,
         relevanceScore: 0.9,
-        hallucinationFlag: false,
+        hallucinationFlag: 0,
         completenessScore: 0.85,
         overallScore: 0.89,
         evalDetail: "详细评测信息",
+        createTime: "2024-01-01T00:00:00Z",
       };
       mockFetch.mockResolvedValueOnce(createEnvelopeResponse("result-123"));
 

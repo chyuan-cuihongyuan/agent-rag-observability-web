@@ -221,7 +221,7 @@ function QueryRewriteCompare({ original, rewritten }: { original?: string; rewri
 function RetrievalStageChart({ stages }: { stages?: string }) {
   if (!stages) return null;
 
-  let parsedStages: Array<{ stage: string; count?: number; costMs?: number }> = [];
+  let parsedStages: Array<{ stage: string; count?: number; costTimeMs?: number }> = [];
   try {
     parsedStages = JSON.parse(stages);
   } catch {
@@ -230,7 +230,7 @@ function RetrievalStageChart({ stages }: { stages?: string }) {
 
   if (!Array.isArray(parsedStages) || parsedStages.length === 0) return null;
 
-  const maxCost = Math.max(...parsedStages.map(s => s.costMs || 0));
+  const maxCost = Math.max(...parsedStages.map(s => s.costTimeMs || 0));
 
   return (
     <Card>
@@ -247,10 +247,10 @@ function RetrievalStageChart({ stages }: { stages?: string }) {
               <div className="flex-1 bg-muted rounded-full h-4 overflow-hidden">
                 <div
                   className="bg-cyan-500 h-full rounded-full"
-                  style={{ width: `${maxCost > 0 ? ((stage.costMs || 0) / maxCost) * 100 : 0}%` }}
+                  style={{ width: `${maxCost > 0 ? ((stage.costTimeMs || 0) / maxCost) * 100 : 0}%` }}
                 />
               </div>
-              <span className="w-16 text-right text-sm font-mono">{stage.costMs || 0}ms</span>
+              <span className="w-16 text-right text-sm font-mono">{stage.costTimeMs || 0}ms</span>
             </div>
           ))}
         </div>
@@ -263,7 +263,7 @@ function RetrievalStageChart({ stages }: { stages?: string }) {
 function SourceDocTable({ sourceDocs }: { sourceDocs?: string }) {
   if (!sourceDocs) return null;
 
-  let docs: Array<{ chunkId?: string; content?: string; score?: number; source?: string }> = [];
+  let docs: Array<{ chunkId?: string; snippet?: string; score?: number; documentName?: string }> = [];
   try {
     docs = JSON.parse(sourceDocs);
   } catch {
@@ -294,13 +294,13 @@ function SourceDocTable({ sourceDocs }: { sourceDocs?: string }) {
               {docs.map((doc, idx) => (
                 <tr key={idx} className="border-b hover:bg-muted/50">
                   <td className="p-2 text-muted-foreground">{idx + 1}</td>
-                  <td className="p-2 font-mono text-xs">{doc.source || doc.chunkId || "-"}</td>
+                  <td className="p-2 font-mono text-xs">{doc.documentName || doc.chunkId || "-"}</td>
                   <td className="p-2">
                     <Badge variant="outline">{doc.score ? (doc.score * 100).toFixed(0) + "%" : "-"}</Badge>
                   </td>
                   <td className="p-2">
-                    <div className="max-w-md truncate" title={doc.content}>
-                      {truncate(doc.content, 100)}
+                    <div className="max-w-md truncate" title={doc.snippet}>
+                      {truncate(doc.snippet, 100)}
                     </div>
                   </td>
                 </tr>

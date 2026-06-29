@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ReactECharts from "echarts-for-react";
-import { dashboardApi, type Overview, type TrendItem, type BranchItem, type ToolItem, type ErrorItem } from "@/lib/api";
+import { dashboardApi, evalApi, type Overview, type TrendItem, type BranchItem, type ToolItem, type ErrorItem, type QualityOverview } from "@/lib/api";
 
 export default function DashboardPage() {
   const [overview, setOverview] = useState<Overview | null>(null);
@@ -12,6 +12,7 @@ export default function DashboardPage() {
   const [branches, setBranches] = useState<BranchItem[]>([]);
   const [tools, setTools] = useState<ToolItem[]>([]);
   const [errors, setErrors] = useState<ErrorItem[]>([]);
+  const [quality, setQuality] = useState<QualityOverview | null>(null);
   const [days, setDays] = useState("1");
   const [loading, setLoading] = useState(true);
 
@@ -19,18 +20,20 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const d = parseInt(days);
-      const [ov, tr, br, tl, er] = await Promise.all([
+      const [ov, tr, br, tl, er, ql] = await Promise.all([
         dashboardApi.overview(d).catch(() => null),
         dashboardApi.trend(d, d <= 1 ? "hour" : "day").catch(() => []),
         dashboardApi.branchDistribution(d).catch(() => []),
         dashboardApi.toolUsage(d).catch(() => []),
         dashboardApi.errorRanking(d).catch(() => []),
+        evalApi.qualityOverview().catch(() => null),
       ]);
       if (ov) setOverview(ov);
       setTrend(tr);
       setBranches(br);
       setTools(tl);
       setErrors(er);
+      if (ql) setQuality(ql);
     } finally {
       setLoading(false);
     }
@@ -98,6 +101,9 @@ export default function DashboardPage() {
         <StatCard title="空检索率" value={overview?.emptyRetrievalRate != null ? `${overview.emptyRetrievalRate}%` : "-"} loading={loading} />
         <StatCard title="失败率" value={overview?.failRate != null ? `${overview.failRate}%` : "-"} loading={loading} color="text-red-500" />
       </div>
+
+      {/* RAG 质量概览 */}
+      <QualityOverviewCard quality={quality} loading={loading} />
 
       {/* Trend Chart */}
       <Card>

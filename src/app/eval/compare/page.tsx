@@ -125,26 +125,51 @@ export default function EvalComparePage() {
                     </div>
                   </div>
 
+                  {/* 检索质量指标（含排序感知） */}
+                  <div className="mt-3">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">检索质量</p>
+                    <div className="grid grid-cols-4 gap-3 text-xs">
+                      <span>精确 <span className="font-mono">{item.avgPrecisionScore?.toFixed(4) ?? "-"}</span></span>
+                      <span>MRR <span className="font-mono">{item.avgMrrScore?.toFixed(4) ?? "-"}</span></span>
+                      <span>NDCG <span className="font-mono">{item.avgNdcgScore?.toFixed(4) ?? "-"}</span></span>
+                      <span>召回 <span className="font-mono">{item.avgRecallScore?.toFixed(4) ?? "-"}</span></span>
+                    </div>
+                  </div>
+
+                  {/* 上下文相关性指标 */}
+                  <div className="mt-2">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">上下文相关性</p>
+                    <div className="grid grid-cols-3 gap-3 text-xs">
+                      <span>上下文精确 <span className="font-mono">{item.avgContextPrecision?.toFixed(4) ?? "-"}</span></span>
+                      <span>上下文召回 <span className="font-mono">{item.avgContextRecall?.toFixed(4) ?? "-"}</span></span>
+                      <span>上下文相关 <span className="font-mono">{item.avgContextRelevance?.toFixed(4) ?? "-"}</span></span>
+                    </div>
+                  </div>
+
+                  {/* 生成质量指标 */}
+                  <div className="mt-2">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">生成质量</p>
+                    <div className="grid grid-cols-3 gap-3 text-xs">
+                      <span>忠实度 <span className="font-mono">{item.avgFaithfulnessScore?.toFixed(4) ?? "-"}</span></span>
+                      <span>答案正确性 <span className="font-mono">{item.avgAnswerCorrectness?.toFixed(4) ?? "-"}</span></span>
+                      <span>综合 <span className="font-mono">{item.avgOverallScore?.toFixed(4) ?? "-"}</span></span>
+                    </div>
+                  </div>
+
                   {/* 差异高亮 */}
                   {comparison.length === 2 && idx === 1 && (
                     <div className="mt-3 pt-3 border-t text-xs space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">综合分差异：</span>
-                        <span className={diffClass(item.avgOverallScore, comparison[0].avgOverallScore)}>
-                          {(item.avgOverallScore - comparison[0].avgOverallScore).toFixed(4)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">召回率差异：</span>
-                        <span className={diffClass(item.avgRecallScore, comparison[0].avgRecallScore)}>
-                          {(item.avgRecallScore - comparison[0].avgRecallScore).toFixed(4)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">忠实度差异：</span>
-                        <span className={diffClass(item.avgFaithfulnessScore, comparison[0].avgFaithfulnessScore)}>
-                          {(item.avgFaithfulnessScore - comparison[0].avgFaithfulnessScore).toFixed(4)}
-                        </span>
+                      <p className="font-medium text-muted-foreground mb-1">与任务 A 的差异</p>
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-1">
+                        <DiffRow label="综合分" current={item.avgOverallScore} baseline={comparison[0].avgOverallScore} />
+                        <DiffRow label="召回率" current={item.avgRecallScore} baseline={comparison[0].avgRecallScore} />
+                        <DiffRow label="忠实度" current={item.avgFaithfulnessScore} baseline={comparison[0].avgFaithfulnessScore} />
+                        <DiffRow label="MRR" current={item.avgMrrScore} baseline={comparison[0].avgMrrScore} />
+                        <DiffRow label="NDCG" current={item.avgNdcgScore} baseline={comparison[0].avgNdcgScore} />
+                        <DiffRow label="上下文精确" current={item.avgContextPrecision} baseline={comparison[0].avgContextPrecision} />
+                        <DiffRow label="上下文召回" current={item.avgContextRecall} baseline={comparison[0].avgContextRecall} />
+                        <DiffRow label="上下文相关" current={item.avgContextRelevance} baseline={comparison[0].avgContextRelevance} />
+                        <DiffRow label="答案正确性" current={item.avgAnswerCorrectness} baseline={comparison[0].avgAnswerCorrectness} />
                       </div>
                     </div>
                   )}
@@ -172,4 +197,18 @@ function diffClass(current: number | undefined, baseline: number | undefined): s
   if (diff > 0.01) return "text-green-600 font-medium";
   if (diff < -0.01) return "text-red-500 font-medium";
   return "text-muted-foreground";
+}
+
+/** 差异行：展示单指标与基准的差异 */
+function DiffRow({ label, current, baseline }: { label: string; current?: number; baseline?: number }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-muted-foreground">{label}差异：</span>
+      <span className={diffClass(current, baseline)}>
+        {current !== undefined && baseline !== undefined
+          ? (current - baseline).toFixed(4)
+          : "-"}
+      </span>
+    </div>
+  );
 }

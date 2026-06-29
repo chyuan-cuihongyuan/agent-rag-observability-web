@@ -167,6 +167,8 @@ export const evalApi = {
     request<PagedResult<EvalResult>>(`/api/v1/eval/result/${taskId}?page=${page}&size=${size}`),
   compareResults: (task1: string, task2: string) =>
     request<CompareItem[]>(`/api/v1/eval/result/compare?task1=${task1}&task2=${task2}`),
+  qualityOverview: (limit = 10) =>
+    request<QualityOverview>(`/api/v1/eval/quality_overview?limit=${limit}`),
 };
 
 // Types
@@ -176,6 +178,23 @@ export interface Overview {
   avgCostTimeMs: number;
   emptyRetrievalRate: number;
   failRate: number;
+}
+
+/** 全局质量概览 — 主页仪表盘 RAG 质量面板用（加权均值） */
+export interface QualityOverview {
+  avgOverallScore?: number;
+  avgRecallScore?: number;
+  avgFaithfulnessScore?: number;
+  avgPrecisionScore?: number;
+  avgMrrScore?: number;
+  avgNdcgScore?: number;
+  avgContextPrecision?: number;
+  avgContextRecall?: number;
+  avgContextRelevance?: number;
+  avgAnswerCorrectness?: number;
+  taskCount: number;
+  sampleCount: number;
+  updateTime?: string;
 }
 
 export interface TrendItem {
@@ -389,11 +408,18 @@ export interface EvalResult {
   precisionScore: number;
   f1Score: number;
   top3HitRate: number;
+  mrrScore?: number;
+  ndcgScore?: number;
+  mapScore?: number;
   answerSimilarity: number;
+  contextPrecision?: number;
+  contextRecall?: number;
+  contextRelevance?: number;
   faithfulnessScore: number;
   relevanceScore: number;
   hallucinationFlag: number;
   completenessScore: number;
+  answerCorrectness?: number;
   overallScore: number;
   evalDetail: string;
   createTime: string;
@@ -417,5 +443,12 @@ export interface CompareItem {
   avgOverallScore: number;
   avgRecallScore: number;
   avgFaithfulnessScore: number;
+  avgPrecisionScore?: number;
+  avgMrrScore?: number;
+  avgNdcgScore?: number;
+  avgContextPrecision?: number;
+  avgContextRecall?: number;
+  avgContextRelevance?: number;
+  avgAnswerCorrectness?: number;
   count: number;
 }

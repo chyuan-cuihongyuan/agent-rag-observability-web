@@ -190,7 +190,7 @@ function ResultCard({ result, evalType }: { result: EvalResult; evalType?: strin
         </div>
       </div>
 
-      {/* 检索指标 */}
+      {/* 检索指标 - 基础 */}
       <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
         <span>召回 {result.recallScore?.toFixed(3) ?? "-"}</span>
         <span>精确 {result.precisionScore?.toFixed(3) ?? "-"}</span>
@@ -198,11 +198,33 @@ function ResultCard({ result, evalType }: { result: EvalResult; evalType?: strin
         <span>Top3 {result.top3HitRate?.toFixed(3) ?? "-"}</span>
       </div>
 
+      {/* 检索指标 - 排序感知（位置加权） */}
+      {(result.mrrScore != null || result.ndcgScore != null || result.mapScore != null) && (
+        <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+          <span>MRR {result.mrrScore?.toFixed(3) ?? "-"}</span>
+          <span>NDCG {result.ndcgScore?.toFixed(3) ?? "-"}</span>
+          <span>MAP {result.mapScore?.toFixed(3) ?? "-"}</span>
+        </div>
+      )}
+
+      {/* 上下文维度指标（RAGAS 式，LLM-as-Judge） */}
+      {(result.contextPrecision != null || result.contextRecall != null || result.contextRelevance != null) && (
+        <div className="pt-2 border-t">
+          <p className="text-xs font-medium text-muted-foreground mb-1">上下文相关性</p>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <span>上下文精确 <span className="font-mono">{result.contextPrecision?.toFixed(3) ?? "-"}</span></span>
+            <span>上下文召回 <span className="font-mono">{result.contextRecall?.toFixed(3) ?? "-"}</span></span>
+            <span>上下文相关 <span className="font-mono">{result.contextRelevance?.toFixed(3) ?? "-"}</span></span>
+          </div>
+        </div>
+      )}
+
       {/* 答案质量指标 */}
-      <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
+      <div className="grid grid-cols-5 gap-2 text-xs text-muted-foreground">
         <span>忠实 {result.faithfulnessScore?.toFixed(3) ?? "-"}</span>
         <span>相关 {result.relevanceScore?.toFixed(3) ?? "-"}</span>
         <span>完整 {result.completenessScore?.toFixed(3) ?? "-"}</span>
+        <span>正确 {result.answerCorrectness?.toFixed(3) ?? "-"}</span>
         <span>相似 {result.answerSimilarity?.toFixed(3) ?? "-"}</span>
       </div>
 
@@ -255,6 +277,7 @@ function EvalTypeBadge({ type }: { type?: string }) {
   const map: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
     RAG_RETRIEVAL: { label: "RAG 检索", variant: "default" },
     ANSWER_QUALITY: { label: "答案质量", variant: "secondary" },
+    CONTEXT_QUALITY: { label: "上下文质量", variant: "secondary" },
     TOOL_CALL: { label: "工具调用", variant: "outline" },
     AGENT_DECISION: { label: "Agent 决策", variant: "outline" },
   };

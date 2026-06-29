@@ -128,7 +128,7 @@ function buildStages(trace: FullTrace): WaterfallStage[] {
   const retrievalStagesStr = trace.ragRetrieval?.retrievalStages;
   if (retrievalStagesStr) {
     try {
-      const ragStages: Array<{ stage: string; count?: number; costMs?: number }> =
+      const ragStages: Array<{ stage: string; count?: number; costTimeMs?: number }> =
         JSON.parse(retrievalStagesStr);
       if (Array.isArray(ragStages)) {
         const stageColors: Record<string, { color: string; icon: string }> = {
@@ -144,7 +144,7 @@ function buildStages(trace: FullTrace): WaterfallStage[] {
           const meta = stageColors[rs.stage] || { color: "#6b7280", icon: "\u2699\uFE0F" };
           stages.push({
             name: formatStageName(rs.stage),
-            costMs: rs.costMs || 0,
+            costMs: rs.costTimeMs || 0,
             detail: rs.count !== undefined ? `${rs.count} 条` : undefined,
             color: meta.color,
             icon: meta.icon,
