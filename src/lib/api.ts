@@ -391,6 +391,8 @@ export interface EvalTaskDetail {
   evalType: string;
   datasetId: string;
   status: string;
+  totalCount?: number;
+  completedCount?: number;
   modelVersion: string;
   ragStrategyVersion: string;
   avgOverallScore: number;

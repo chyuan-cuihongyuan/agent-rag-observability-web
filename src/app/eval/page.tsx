@@ -94,9 +94,9 @@ export default function EvalPage() {
                 <thead>
                   <tr className="border-b text-left text-muted-foreground">
                     <th className="py-2">任务名称</th>
-                    <th className="py-2">类型</th>
+                    <th className="py-2">评测类型</th>
                     <th className="py-2">状态</th>
-                    <th className="py-2">平均分</th>
+                    <th className="py-2">质量摘要</th>
                     <th className="py-2">创建时间</th>
                   </tr>
                 </thead>
@@ -108,13 +108,24 @@ export default function EvalPage() {
                           {t.taskName}
                         </Link>
                       </td>
-                      <td className="py-2">{t.evalType}</td>
+                      <td className="py-2">
+                        <Badge variant="outline">{evalTypeLabel(t.evalType)}</Badge>
+                      </td>
                       <td className="py-2">
                         <Badge variant={t.status === "COMPLETED" ? "default" : t.status === "FAILED" ? "destructive" : "secondary"}>
                           {t.status}
                         </Badge>
                       </td>
-                      <td className="py-2 font-mono">{t.avgOverallScore?.toFixed(2) ?? "-"}</td>
+                      <td className="py-2">
+                        <div className="flex items-center gap-2">
+                          <span className={`font-mono font-bold ${listScoreColor(t.avgOverallScore)}`}>
+                            {t.avgOverallScore != null ? `${(t.avgOverallScore * 100).toFixed(1)}%` : "-"}
+                          </span>
+                          {t.completedCount != null && t.completedCount > 0 && (
+                            <span className="text-xs text-muted-foreground">{t.completedCount} 条</span>
+                          )}
+                        </div>
+                      </td>
                       <td className="py-2 text-xs text-muted-foreground">{t.createTime}</td>
                     </tr>
                   ))}
@@ -258,4 +269,25 @@ function CreateTaskDialog({ datasets, onCreated }: { datasets: EvalDatasetDetail
       </DialogContent>
     </Dialog>
   );
+}
+
+/** 评测类型中文标签 */
+function evalTypeLabel(type?: string): string {
+  const map: Record<string, string> = {
+    RAG_RETRIEVAL: "RAG 检索",
+    ANSWER_QUALITY: "答案质量",
+    CONTEXT_QUALITY: "上下文质量",
+    TOOL_CALL: "工具调用",
+    AGENT_DECISION: "Agent 决策",
+  };
+  return (type && map[type]) || type || "-";
+}
+
+/** 列表页综合分配色：>=80% 绿、>=60% 琥珀、否则红 */
+function listScoreColor(score?: number): string {
+  if (score == null) return "text-muted-foreground";
+  const pct = score <= 1 ? score * 100 : score;
+  if (pct >= 80) return "text-emerald-600";
+  if (pct >= 60) return "text-amber-600";
+  return "text-red-500";
 }
