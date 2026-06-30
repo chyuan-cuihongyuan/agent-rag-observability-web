@@ -4,7 +4,7 @@ import {useCallback, useEffect, useState} from "react";
 import {useParams} from "next/navigation";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Badge} from "@/components/ui/badge";
-import {type FullTrace, type MemoryRecallLog, queryApi, type ToolCallLog} from "@/lib/api";
+import {type FullTrace, type MemoryRecallLog, queryApi, type ToolCallLog, type TraceQuality} from "@/lib/api";
 import {TraceWaterfall} from "@/components/trace/TraceWaterfall";
 import {ErrorHighlight} from "@/components/trace/ErrorHighlight";
 
@@ -70,6 +70,9 @@ export default function TraceDetailPage() {
 
       {/* RAG 阶段耗时 */}
       <RetrievalStageChart stages={trace.ragRetrieval?.retrievalStages} />
+
+      {/* 在线质量评分（实时派生） */}
+      <QualityScoreCard quality={trace.quality} />
 
       {/* 引用来源 */}
       <SourceDocTable sourceDocs={trace.ragRetrieval?.sourceDocs} />
@@ -257,6 +260,53 @@ function RetrievalStageChart({ stages }: { stages?: string }) {
       </CardContent>
     </Card>
   );
+}
+
+/** 在线质量评分卡片（实时派生，零 LLM） */
+function QualityScoreCard({ quality }: { quality?: TraceQuality | null }) {
+  if (!quality) return null;
+
+  const items: { label: string; value?: number | null; desc: string }[] = [
+    { label: "检索质量", value: quality.retrievalQuality, desc: "基于重排分数与召回充足度" },
+    { label: "答案忠实度", value: quality.faithfulness, desc: "基于答案完整性与来源支撑" },
+    { label: "答案相关性", value: quality.answerRelevance, desc: "基于问题与答案的词面重叠" },
+  ];
+
+  // 三项都无值则不展示
+  const hasAny = items.some((m) => m.value !== undefined && m.value !== null);
+  if (!hasAny) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <span className="text-emerald-500">★</span> 质量评分
+          <span className="text-xs font-normal text-muted-foreground">（实时派生）</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-3 gap-4">
+          {items.map((m) => (
+            <div key={m.label} className="text-center">
+              <p className="text-xs text-muted-foreground mb-1">{m.label}</p>
+              <p className={`text-2xl font-mono font-bold ${traceScoreColor(m.value)}`}>
+                {m.value !== undefined && m.value !== null ? `${(m.value * 100).toFixed(0)}%` : "-"}
+              </p>
+              <p className="text-[10px] text-muted-foreground/70 mt-1">{m.desc}</p>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** trace 质量分配色 */
+function traceScoreColor(v?: number | null): string {
+  if (v === undefined || v === null) return "text-muted-foreground";
+  if (v >= 0.8) return "text-emerald-600";
+  if (v >= 0.6) return "text-amber-600";
+  return "text-red-500";
 }
 
 /** 引用来源表格 */

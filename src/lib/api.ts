@@ -296,6 +296,13 @@ export interface ChatResultData {
   createTime?: string;
 }
 
+/** Trace 在线质量评分（实时派生） */
+export interface TraceQuality {
+  retrievalQuality?: number | null;
+  faithfulness?: number | null;
+  answerRelevance?: number | null;
+}
+
 export interface FullTrace {
   traceId: string;
   sessionId: string;
@@ -308,6 +315,7 @@ export interface FullTrace {
   chatResult: ChatResultData | null;
   toolCalls: ToolCallLog[] | null;
   memoryRecalls: MemoryRecallLog[] | null;
+  quality?: TraceQuality | null;
 }
 
 export interface TraceQuery {
