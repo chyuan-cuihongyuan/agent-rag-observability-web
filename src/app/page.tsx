@@ -187,3 +187,76 @@ function StatCard({ title, value, loading, color }: { title: string; value: stri
     </Card>
   );
 }
+
+/**
+ * 将评分格式化为百分比或保留小数。
+ * RAG 指标（MRR/NDCG/Recall/Precision）通常为 0~1，按百分比展示；
+ * 若数值 > 1（如 0~100 量纲）则直接展示并保留一位小数。
+ */
+function fmtScore(v?: number): string {
+  if (v == null || Number.isNaN(v)) return "-";
+  if (v <= 1) return `${(v * 100).toFixed(1)}%`;
+  return v.toFixed(1);
+}
+
+/**
+ * 根据分值返回颜色：>=80% 绿、>=60% 琥珀、否则红。
+ */
+function scoreColor(v?: number): string {
+  if (v == null) return "";
+  const pct = v <= 1 ? v * 100 : v;
+  if (pct >= 80) return "text-emerald-600";
+  if (pct >= 60) return "text-amber-600";
+  return "text-red-500";
+}
+
+function QualityOverviewCard({ quality, loading }: { quality: QualityOverview | null; loading: boolean }) {
+  const hasData = !!quality && quality.taskCount > 0;
+
+  const metrics: { label: string; value?: number; hint: string }[] = [
+    { label: "综合得分", value: quality?.avgOverallScore, hint: "加权平均" },
+    { label: "忠实度", value: quality?.avgFaithfulnessScore, hint: "Faithfulness" },
+    { label: "回答正确性", value: quality?.avgAnswerCorrectness, hint: "Correctness" },
+    { label: "召回率", value: quality?.avgRecallScore, hint: "Recall" },
+    { label: "精确率", value: quality?.avgPrecisionScore, hint: "Precision" },
+    { label: "上下文精确率", value: quality?.avgContextPrecision, hint: "Ctx Precision" },
+    { label: "上下文召回", value: quality?.avgContextRecall, hint: "Ctx Recall" },
+    { label: "上下文相关性", value: quality?.avgContextRelevance, hint: "Ctx Relevance" },
+    { label: "MRR", value: quality?.avgMrrScore, hint: "Mean Reciprocal Rank" },
+    { label: "NDCG", value: quality?.avgNdcgScore, hint: "Normalized DCG" },
+  ];
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between space-y-0">
+        <CardTitle className="text-base">RAG 质量概览</CardTitle>
+        {hasData && (
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span>任务 {quality?.taskCount}</span>
+            <span>样本 {quality?.sampleCount}</span>
+            {quality?.updateTime && <span>更新于 {quality.updateTime}</span>}
+          </div>
+        )}
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="h-24 flex items-center justify-center text-muted-foreground text-sm">加载中...</div>
+        ) : !hasData ? (
+          <div className="h-24 flex items-center justify-center text-muted-foreground text-sm">暂无评测数据</div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {metrics.map((m) => (
+              <div key={m.label} className="flex flex-col gap-1" title={m.hint}>
+                <span className="text-xs text-muted-foreground">{m.label}</span>
+                <span className={`text-xl font-bold ${scoreColor(m.value)}`}>
+                  {fmtScore(m.value)}
+                </span>
+                <span className="text-[10px] text-muted-foreground/70">{m.hint}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
