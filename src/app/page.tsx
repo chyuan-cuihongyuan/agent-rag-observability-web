@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const [quality, setQuality] = useState<QualityOverview | null>(null);
   const [days, setDays] = useState("1");
   const [loading, setLoading] = useState(true);
+  const [seeding, setSeeding] = useState(false);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -41,6 +42,19 @@ export default function DashboardPage() {
 
   useEffect(() => {
     void Promise.resolve().then(loadAll);
+  }, [loadAll]);
+
+  /** 一键生成示例评测数据（后端 /api/v1/seed/eval 接口本就放行，无需 auth-key） */
+  const handleSeed = useCallback(async () => {
+    setSeeding(true);
+    try {
+      await evalApi.seedEval(3, 18);
+      await loadAll();
+    } catch {
+      // 种子接口失败时静默，用户可重试
+    } finally {
+      setSeeding(false);
+    }
   }, [loadAll]);
 
   const trendOption = {
@@ -103,7 +117,7 @@ export default function DashboardPage() {
       </div>
 
       {/* RAG 质量概览 */}
-      <QualityOverviewCard quality={quality} loading={loading} />
+      <QualityOverviewCard quality={quality} loading={loading} seeding={seeding} onSeed={handleSeed} />
 
       {/* Trend Chart */}
       <Card>
@@ -210,7 +224,12 @@ function scoreColor(v?: number): string {
   return "text-red-500";
 }
 
-function QualityOverviewCard({ quality, loading }: { quality: QualityOverview | null; loading: boolean }) {
+function QualityOverviewCard({ quality, loading, seeding, onSeed }: {
+  quality: QualityOverview | null;
+  loading: boolean;
+  seeding: boolean;
+  onSeed: () => void;
+}) {
   const hasData = !!quality && quality.taskCount > 0;
 
   const metrics: { label: string; value?: number; hint: string }[] = [
@@ -242,7 +261,16 @@ function QualityOverviewCard({ quality, loading }: { quality: QualityOverview | 
         {loading ? (
           <div className="h-24 flex items-center justify-center text-muted-foreground text-sm">加载中...</div>
         ) : !hasData ? (
-          <div className="h-24 flex items-center justify-center text-muted-foreground text-sm">暂无评测数据</div>
+          <div className="h-24 flex flex-col items-center justify-center gap-3 text-muted-foreground text-sm">
+            <span>暂无评测数据</span>
+            <button
+              onClick={onSeed}
+              disabled={seeding}
+              className="px-3 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {seeding ? "生成中..." : "生成示例评测数据"}
+            </button>
+          </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {metrics.map((m) => (

@@ -169,6 +169,12 @@ export const evalApi = {
     request<CompareItem[]>(`/api/v1/eval/result/compare?task1=${task1}&task2=${task2}`),
   qualityOverview: (limit = 10) =>
     request<QualityOverview>(`/api/v1/eval/quality_overview?limit=${limit}`),
+  /** 生成评测种子数据（供主页质量概览面板） */
+  seedEval: (taskCount = 3, itemsPerTask = 18) =>
+    request<{ totalResults: number; taskCount: number; itemsPerTask: number; costTimeMs: number }>(
+      `/api/v1/seed/eval?taskCount=${taskCount}&itemsPerTask=${itemsPerTask}`,
+      { method: "POST" }
+    ),
 };
 
 // Types
