@@ -116,8 +116,9 @@ export default function DashboardPage() {
         <StatCard title="失败率" value={overview?.failRate != null ? `${overview.failRate}%` : "-"} loading={loading} color="text-red-500" />
       </div>
 
-      {/* RAG 质量概览 */}
+      {/* RAG 质量概览（暂不显示）
       <QualityOverviewCard quality={quality} loading={loading} seeding={seeding} onSeed={handleSeed} />
+      */}
 
       {/* Trend Chart */}
       <Card>

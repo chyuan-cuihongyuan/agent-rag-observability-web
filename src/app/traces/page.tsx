@@ -176,11 +176,17 @@ export default function TracesPage() {
                         </Link>
                       </td>
                       <td className="py-2 pr-4">
-                        <Link href={`/traces/${t.traceId}`} className="text-blue-600 hover:underline font-mono text-xs">
-                          {t.traceId?.slice(0, 12)}...
+                        <Link href={`/traces/${t.traceId}`} className="text-blue-600 hover:underline font-mono text-xs break-all" title={t.traceId}>
+                          {t.traceId || "-"}
                         </Link>
                       </td>
-                      <td className="py-2 pr-4 font-mono text-xs">{t.sessionId?.slice(0, 12)}...</td>
+                      <td className="py-2 pr-4 font-mono text-xs">
+                        {t.sessionId ? (
+                          <Link href={`/sessions/${t.sessionId}`} className="text-blue-600 hover:underline break-all" title={`查看会话 ${t.sessionId}`}>
+                            {t.sessionId}
+                          </Link>
+                        ) : "-"}
+                      </td>
                       <td className="py-2 pr-4">{t.agentId}</td>
                       <td className="py-2 pr-4">
                         <BranchBadge branch={t.branchType} />

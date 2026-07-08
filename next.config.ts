@@ -8,6 +8,8 @@ const API_BASE =
 const nextConfig: NextConfig = {
   // 启用 standalone 输出模式（用于 Docker 部署）
   output: 'standalone',
+  // 监控前端通过 chyuan.ltd/obs/ 路径访问（共用单域名 SSL 证书）
+  basePath: '/obs',
 
   async rewrites() {
     return [
