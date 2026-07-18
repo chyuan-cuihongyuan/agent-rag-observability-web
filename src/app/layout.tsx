@@ -34,6 +34,16 @@ export default function RootLayout({
         <main className="flex-1 overflow-auto bg-background">
           {children}
         </main>
+        <footer className="fixed bottom-2 right-3 text-[11px] text-muted-foreground/70 z-50 pointer-events-auto">
+          <a
+            href="https://beian.miit.gov.cn/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-foreground transition-colors"
+          >
+            京ICP备2026041953号-1
+          </a>
+        </footer>
       </body>
     </html>
   );
