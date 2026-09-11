@@ -8,6 +8,9 @@ import {
   dashboardApi,
   queryApi,
   evalApi,
+  patrolApi,
+  caseApi,
+  gateApi,
   ApiError,
   isBackendUnavailable,
   isApiUnavailableError,
@@ -633,6 +636,111 @@ describe("API 客户端单元测试", () => {
       const result = await dashboardApi.overview();
 
       expect(result).toEqual(directData);
+    });
+  });
+  // ========== 评测工作台 API（工单 0140 T1） ==========
+
+  describe("巡检 API", () => {
+    it("应该查询拨测记录分页", async () => {
+      mockFetch.mockResolvedValueOnce(createEnvelopeResponse([]));
+      await patrolApi.records(2, 10);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/v1/patrol/records?page=2&size=10"),
+        expect.any(Object)
+      );
+    });
+
+    it("应该查询最近一轮汇总", async () => {
+      const summary = { roundId: "P1", total: 3, success: 2, fail: 1, timeout: 0, avgScore: 0.8 };
+      mockFetch.mockResolvedValueOnce(createEnvelopeResponse(summary));
+      const result = await patrolApi.latest();
+      expect(result).toEqual(summary);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/v1/patrol/latest"),
+        expect.any(Object)
+      );
+    });
+
+    it("应该 POST 手动拨测", async () => {
+      mockFetch.mockResolvedValueOnce(createEnvelopeResponse({ roundId: "P2", total: 0, success: 0, fail: 0, timeout: 0 }));
+      await patrolApi.trigger();
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/v1/patrol/trigger"),
+        expect.objectContaining({ method: "POST" })
+      );
+    });
+  });
+
+  describe("Case 挖掘 API", () => {
+    it("应该按来源查询候选列表", async () => {
+      mockFetch.mockResolvedValueOnce(createEnvelopeResponse([]));
+      await caseApi.candidates("PATROL_FAIL", 1, 20);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/v1/eval/cases/candidates?source=PATROL_FAIL&page=1&size=20"),
+        expect.any(Object)
+      );
+    });
+
+    it("应该批量回填错题集", async () => {
+      mockFetch.mockResolvedValueOnce(createEnvelopeResponse({ promoted: 2, datasetId: "ds-1" }));
+      const result = await caseApi.promote([1, 2], "错题本");
+      expect(result.datasetId).toBe("ds-1");
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/v1/eval/cases/promote"),
+        expect.objectContaining({ method: "POST" })
+      );
+    });
+
+    it("应该 PATCH 归因标注", async () => {
+      mockFetch.mockResolvedValueOnce(createEnvelopeResponse({ updated: 1 }));
+      await caseApi.attribute(9, "TOOL", "参数错");
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/v1/eval/cases/9/attribution"),
+        expect.objectContaining({ method: "PATCH" })
+      );
+    });
+
+    it("应该查询归因分布统计（时间窗编码）", async () => {
+      mockFetch.mockResolvedValueOnce(createEnvelopeResponse([]));
+      await caseApi.attributionStats("2026-09-01 00:00:00", "2026-09-11 00:00:00");
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining(encodeURIComponent("2026-09-01 00:00:00")),
+        expect.any(Object)
+      );
+    });
+  });
+
+  describe("门禁 API", () => {
+    it("应该查询门禁规则列表与最新判定", async () => {
+      mockFetch.mockResolvedValueOnce(createEnvelopeResponse({ list: [] }));
+      await gateApi.list();
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/v1/eval/gate/list?page=1&size=50"),
+        expect.any(Object)
+      );
+
+      mockFetch.mockResolvedValueOnce(createEnvelopeResponse(null));
+      await gateApi.latestRecord("gate-1");
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/v1/eval/gate/record/latest?gateId=gate-1"),
+        expect.any(Object)
+      );
+    });
+
+    it("应该查询三池数据集与版本", async () => {
+      mockFetch.mockResolvedValueOnce(createEnvelopeResponse({ list: [] }));
+      await evalApi.listDatasetsByPool("wrong");
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/v1/eval/dataset/pool/wrong?page=1&size=50"),
+        expect.any(Object)
+      );
+
+      mockFetch.mockResolvedValueOnce(createEnvelopeResponse({ list: [] }));
+      await evalApi.listDatasetVersions("ds-9");
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/v1/eval/dataset/ds-9/versions"),
+        expect.any(Object)
+      );
     });
   });
 });

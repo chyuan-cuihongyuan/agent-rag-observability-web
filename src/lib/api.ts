@@ -175,6 +175,154 @@ export const evalApi = {
       `/api/v1/seed/eval?taskCount=${taskCount}&itemsPerTask=${itemsPerTask}`,
       { method: "POST" }
     ),
+  // ========== 评测工作台：三池/版本/冻结（工单 0134 R2 后端 + 0140 前端） ==========
+  listDatasetsByPool: (pool: string, page = 1, size = 50) =>
+    request<DatasetList>(`/api/v1/eval/dataset/pool/${pool}?page=${page}&size=${size}`),
+  listDatasetVersions: (datasetId: string) =>
+    request<{ list: EvalDatasetDetail[] }>(`/api/v1/eval/dataset/${datasetId}/versions`),
+  copyDatasetVersion: (datasetId: string) =>
+    request<EvalDatasetDetail>(`/api/v1/eval/dataset/${datasetId}/copy-version`, { method: "POST" }),
+  freezeDataset: (datasetId: string, frozen: boolean) =>
+    request<string>(`/api/v1/eval/dataset/${datasetId}/${frozen ? "freeze" : "unfreeze"}`, { method: "POST" }),
+};
+
+// ========== 巡检拨测（工单 0137 S1 后端 + 0140 前端） ==========
+
+/** 巡检拨测记录 */
+export interface PatrolRecord {
+  id: number;
+  roundId: string;
+  taskRef: string;
+  query: string;
+  agentId?: string;
+  /** SUCCESS / FAIL / TIMEOUT */
+  status: string;
+  score?: number | null;
+  durationMs: number;
+  errorSummary?: string;
+  traceId?: string;
+  createTime: string;
+}
+
+/** 巡检轮次汇总（/patrol/latest；roundId=null 表示从未巡检） */
+export interface PatrolRoundSummary {
+  roundId: string | null;
+  total: number;
+  success: number;
+  fail: number;
+  timeout: number;
+  avgScore?: number | null;
+  finishedAt?: string | null;
+}
+
+export const patrolApi = {
+  records: (page = 1, size = 20) =>
+    request<PatrolRecord[]>(`/api/v1/patrol/records?page=${page}&size=${size}`),
+  latest: () => request<PatrolRoundSummary>(`/api/v1/patrol/latest`),
+  trigger: () => request<PatrolRoundSummary>(`/api/v1/patrol/trigger`, { method: "POST" }),
+};
+
+// ========== Case 挖掘与归因（工单 0138/0139 后端 + 0140 前端） ==========
+
+/** Case 候选 */
+export interface CaseCandidate {
+  id: number;
+  /** EVAL_LOW_SCORE / TRACE_FAIL / PATROL_FAIL */
+  source: string;
+  sourceRef: string;
+  traceId?: string;
+  query?: string;
+  answerSummary?: string;
+  hitDocCount?: number;
+  toolList?: string;
+  reason?: string;
+  /** PENDING / PROMOTED / IGNORED */
+  status: string;
+  promotedDatasetId?: string;
+  createTime: string;
+  /** PLANNING / TOOL / ENVIRONMENT / SKILL（未标注 null） */
+  attribution?: string | null;
+  attributionNote?: string;
+  attributionBy?: string;
+  attributionAt?: string;
+}
+
+/** 归因分布统计行（四层全量返回） */
+export interface AttributionStatRow {
+  attribution: string;
+  count: number;
+  ratio: number;
+}
+
+export const caseApi = {
+  candidates: (source = "", page = 1, size = 20) =>
+    request<CaseCandidate[]>(
+      `/api/v1/eval/cases/candidates?source=${encodeURIComponent(source)}&page=${page}&size=${size}`
+    ),
+  collect: (config?: { lowScoreThreshold?: number; scanLimit?: number }) =>
+    request<Record<string, number>>(`/api/v1/eval/cases/collect`, {
+      method: "POST",
+      body: JSON.stringify(config ?? {}),
+    }),
+  promote: (ids: number[], datasetName?: string) =>
+    request<{ promoted: number; datasetId: string }>(`/api/v1/eval/cases/promote`, {
+      method: "POST",
+      body: JSON.stringify({ ids, datasetName }),
+    }),
+  ignore: (ids: number[]) =>
+    request<{ ignored: number }>(`/api/v1/eval/cases/ignore`, {
+      method: "POST",
+      body: JSON.stringify({ ids }),
+    }),
+  attribute: (id: number, attribution: string, note?: string) =>
+    request<{ updated: number }>(`/api/v1/eval/cases/${id}/attribution`, {
+      method: "PATCH",
+      body: JSON.stringify({ attribution, note }),
+    }),
+  attributionStats: (startTime = "", endTime = "", source = "") =>
+    request<AttributionStatRow[]>(
+      `/api/v1/eval/cases/attribution/stats?startTime=${encodeURIComponent(startTime)}&endTime=${encodeURIComponent(
+        endTime
+      )}&source=${encodeURIComponent(source)}`
+    ),
+};
+
+// ========== 评测门禁（工单 0136 R4 后端 + 0140 前端） ==========
+
+/** 门禁规则 */
+export interface GateRule {
+  gateId: string;
+  name: string;
+  /** 安全维度 JSON {dim: minSafety} */
+  safetyDimsJson?: string;
+  /** 质量分阈值 JSON {metric: min} */
+  scoreThresholdsJson?: string;
+  trials?: number;
+  enabled?: number | boolean;
+  createTime?: string;
+}
+
+/** 门禁判定记录（PASS/BLOCK + 触发明细） */
+export interface GateRecord {
+  recordId: string;
+  gateId: string;
+  taskId: string;
+  /** PASS / BLOCK */
+  result: string;
+  /** 触发明细 JSON 数组 [{ruleType,dim,actual,threshold,note}] */
+  triggerDetail?: string;
+  createTime: string;
+}
+
+export const gateApi = {
+  list: (page = 1, size = 50) =>
+    request<{ list: GateRule[]; total?: number }>(`/api/v1/eval/gate/list?page=${page}&size=${size}`),
+  latestRecord: (gateId: string) =>
+    request<GateRecord>(`/api/v1/eval/gate/record/latest?gateId=${encodeURIComponent(gateId)}`),
+  recordList: (gateId = "", page = 1, size = 20) =>
+    request<{ list: GateRecord[]; total?: number }>(
+      `/api/v1/eval/gate/record/list?gateId=${encodeURIComponent(gateId)}&page=${page}&size=${size}`
+    ),
 };
 
 // Types
@@ -389,6 +537,13 @@ export interface EvalDatasetDetail {
   description: string;
   itemCount: number;
   createTime: string;
+  // 版本化 + 三池 + 冻结（工单 0134 R2）
+  version?: number;
+  /** golden / challenge / wrong / null=未分类 */
+  pool?: string | null;
+  /** trace / manual / seed */
+  source?: string | null;
+  frozen?: boolean;
 }
 
 export interface EvalTask {

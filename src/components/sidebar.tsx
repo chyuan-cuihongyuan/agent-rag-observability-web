@@ -9,6 +9,7 @@ const navItems = [
   { href: "/traces", label: "Trace 查询", icon: "🔍" },
   { href: "/sessions", label: "会话视图", icon: "💬" },
   { href: "/eval", label: "评测管理", icon: "📋" },
+  { href: "/eval/workbench", label: "评测工作台", icon: "🧪" },
 ];
 
 export function Sidebar() {
@@ -26,7 +27,12 @@ export function Sidebar() {
             href={item.href}
             className={cn(
               "flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-muted",
-              (item.href === "/" ? pathname === "/" : pathname.startsWith(item.href))
+              (item.href === "/"
+                ? pathname === "/"
+                : // /eval 前缀不吞掉 /eval/workbench（工作台独立高亮）
+                item.href === "/eval"
+                ? pathname === "/eval"
+                : pathname.startsWith(item.href))
                 ? "bg-muted font-medium text-foreground"
                 : "text-muted-foreground"
             )}
