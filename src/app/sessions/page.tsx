@@ -6,22 +6,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { queryApi, type AgentDecision } from "@/lib/api";
+import { EmptyState } from "@/components/state/empty-state";
+import { ErrorState } from "@/components/state/error-state";
+import { LoadingState } from "@/components/state/loading-state";
 
 export default function SessionsPage() {
   const [sessionId, setSessionId] = useState("");
   const [results, setResults] = useState<AgentDecision[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function search() {
     if (!sessionId.trim()) return;
     setLoading(true);
     setSearched(true);
+    setError(null);
     try {
       const data = await queryApi.bySession(sessionId.trim());
       setResults(data || []);
     } catch {
       setResults([]);
+      setError("会话记录加载失败，请稍后重试");
     } finally {
       setLoading(false);
     }
@@ -48,8 +54,10 @@ export default function SessionsPage() {
         </CardContent>
       </Card>
 
-      {loading ? (
-        <div className="py-8 text-center text-muted-foreground">加载中...</div>
+      {error ? (
+        <ErrorState message={error} onRetry={() => void search()} />
+      ) : loading ? (
+        <LoadingState text="正在查询会话记录..." />
       ) : searched ? (
         <Card>
           <CardHeader>
@@ -59,7 +67,10 @@ export default function SessionsPage() {
           </CardHeader>
           <CardContent>
             {results.length === 0 ? (
-              <div className="py-4 text-center text-muted-foreground">未找到记录</div>
+              <EmptyState
+                text="未找到记录"
+                description="确认 SessionID 是否正确，或该会话尚无上报数据"
+              />
             ) : (
               <table className="w-full text-sm">
                 <thead>

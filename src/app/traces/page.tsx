@@ -7,12 +7,16 @@ import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
 import {Badge} from "@/components/ui/badge";
 import {queryApi, type TraceListItem} from "@/lib/api";
+import {EmptyState} from "@/components/state/empty-state";
+import {ErrorState} from "@/components/state/error-state";
+import {LoadingState} from "@/components/state/loading-state";
 
 export default function TracesPage() {
   const [traces, setTraces] = useState<TraceListItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [traceIdInput, setTraceIdInput] = useState("");
   const [sessionId, setSessionId] = useState("");
   const [userId, setUserId] = useState("");
@@ -22,6 +26,7 @@ export default function TracesPage() {
 
   const search = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const result = await queryApi.traceList({
         sessionId: sessionId || undefined,
@@ -38,6 +43,7 @@ export default function TracesPage() {
       }
     } catch {
       setTraces([]);
+      setError("Trace 列表加载失败，请检查服务状态后重试");
     } finally {
       setLoading(false);
     }
@@ -147,10 +153,15 @@ export default function TracesPage() {
           <span className="text-sm text-muted-foreground">共 {total} 条</span>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="py-8 text-center text-muted-foreground">加载中...</div>
+          {error ? (
+            <ErrorState message={error} onRetry={() => void search()} />
+          ) : loading ? (
+            <LoadingState text="正在加载 Trace 列表..." />
           ) : traces.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground">暂无数据</div>
+            <EmptyState
+              text="暂无数据"
+              description="调整筛选条件或稍后重试"
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">

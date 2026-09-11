@@ -15,11 +15,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { evalApi, type EvalDatasetDetail, type EvalTaskDetail } from "@/lib/api";
+import { EmptyState } from "@/components/state/empty-state";
+import { ErrorState } from "@/components/state/error-state";
+import { LoadingState } from "@/components/state/loading-state";
 
 export default function EvalPage() {
   const [datasets, setDatasets] = useState<EvalDatasetDetail[]>([]);
   const [tasks, setTasks] = useState<EvalTaskDetail[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -27,13 +31,21 @@ export default function EvalPage() {
 
   async function loadData() {
     setLoading(true);
+    setError(null);
     try {
-      const [dsRes, taskRes] = await Promise.all([
-        evalApi.listDatasets().catch(() => ({ list: [] })),
-        evalApi.listTasks().catch(() => ({ list: [], total: 0 })),
+      const [dsRes, taskRes] = await Promise.allSettled([
+        evalApi.listDatasets(),
+        evalApi.listTasks(),
       ]);
-      setDatasets(dsRes?.list ?? []);
-      setTasks(taskRes?.list ?? []);
+      if (dsRes.status === "fulfilled") {
+        setDatasets(dsRes.value?.list ?? []);
+      }
+      if (taskRes.status === "fulfilled") {
+        setTasks(taskRes.value?.list ?? []);
+      }
+      if (dsRes.status === "rejected" && taskRes.status === "rejected") {
+        setError("评测数据加载失败，请检查服务状态后重试");
+      }
     } finally {
       setLoading(false);
     }
@@ -51,10 +63,12 @@ export default function EvalPage() {
             <CreateDatasetDialog onCreated={loadData} />
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="py-4 text-center text-muted-foreground text-sm">加载中...</div>
+            {error ? (
+              <ErrorState message={error} onRetry={() => void loadData()} />
+            ) : loading ? (
+              <LoadingState text="加载数据集..." />
             ) : datasets.length === 0 ? (
-              <div className="py-4 text-center text-muted-foreground text-sm">暂无数据集</div>
+              <EmptyState text="暂无数据集" description="点击右上角创建首个评测数据集" />
             ) : (
               <table className="w-full text-sm">
                 <thead>
@@ -85,10 +99,12 @@ export default function EvalPage() {
             <CreateTaskDialog datasets={datasets} onCreated={loadData} />
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="py-4 text-center text-muted-foreground text-sm">加载中...</div>
+            {error ? (
+              <ErrorState message={error} onRetry={() => void loadData()} />
+            ) : loading ? (
+              <LoadingState text="加载评测任务..." />
             ) : tasks.length === 0 ? (
-              <div className="py-4 text-center text-muted-foreground text-sm">暂无评测任务</div>
+              <EmptyState text="暂无评测任务" description="基于已有数据集发起一次评测" />
             ) : (
               <table className="w-full text-sm">
                 <thead>
