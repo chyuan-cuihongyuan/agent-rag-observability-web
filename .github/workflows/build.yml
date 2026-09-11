@@ -1,0 +1,40 @@
+name: build
+
+# SELFLOOP E10a：observability-web 前端 CI（tsc 类型门 + jest 单测 + next build 产物门）
+on:
+  push:
+    branches: [online-main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 类型检查（tsc --noEmit）
+        run: npx tsc --noEmit
+
+      - name: 单元测试（jest）
+        run: npm test -- --ci
+
+      - name: 生产构建（next build）
+        run: npm run build

@@ -1,5 +1,7 @@
 # Agent RAG Observability Web
 
+[![build](https://github.com/chyuan-cuihongyuan/agent-rag-observability-web/actions/workflows/build.yml/badge.svg?branch=online-main)](https://github.com/chyuan-cuihongyuan/agent-rag-observability-web/actions/workflows/build.yml)
+
 ## 项目概述
 
 Agent RAG Observability Web 是 Agent 体系的**可观测性前端**，对接 `agent-rag-observability-server`（默认 8092），提供 Trace 详情、会话回放、RAG 质量看板与离线评测可视化能力。基于 Next.js 16 App Router + React 19 + TypeScript 构建，使用 Tailwind CSS 4 与 shadcn/ui 组件库，通过 ECharts 渲染趋势与分布图表。
