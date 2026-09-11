@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { queryApi, type AgentDecision } from "@/lib/api";
+import { EmptyState } from "@/components/state/empty-state";
+import { LoadingState } from "@/components/state/loading-state";
 
 export default function SessionDetailPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -37,9 +39,9 @@ export default function SessionDetailPage() {
       </div>
 
       {loading ? (
-        <div className="py-8 text-center text-muted-foreground">加载中...</div>
+        <LoadingState />
       ) : traces.length === 0 ? (
-        <div className="py-8 text-center text-muted-foreground">未找到记录</div>
+        <EmptyState text="未找到记录" description="该会话暂无 Trace 数据" />
       ) : (
         <Card>
           <CardHeader>

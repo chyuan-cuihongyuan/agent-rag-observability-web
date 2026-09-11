@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ReactECharts from "echarts-for-react";
 import { dashboardApi, evalApi, type Overview, type TrendItem, type BranchItem, type ToolItem, type ErrorItem, type QualityOverview } from "@/lib/api";
+import { EmptyState } from "@/components/state/empty-state";
+import { LoadingState } from "@/components/state/loading-state";
 
 export default function DashboardPage() {
   const [overview, setOverview] = useState<Overview | null>(null);
@@ -127,8 +129,8 @@ export default function DashboardPage() {
           {trend.length > 0 ? (
             <ReactECharts option={trendOption} style={{ height: 300 }} />
           ) : (
-            <div className="h-[300px] flex items-center justify-center text-muted-foreground text-sm">
-              {loading ? "加载中..." : "暂无数据"}
+            <div className="h-[300px] flex items-center justify-center">
+              {loading ? <LoadingState className="py-0" /> : <EmptyState className="py-0" />}
             </div>
           )}
         </CardContent>
@@ -142,8 +144,8 @@ export default function DashboardPage() {
             {branches.length > 0 ? (
               <ReactECharts option={branchOption} style={{ height: 280 }} />
             ) : (
-              <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
-                {loading ? "加载中..." : "暂无数据"}
+              <div className="h-[280px] flex items-center justify-center">
+                {loading ? <LoadingState className="py-0" /> : <EmptyState className="py-0" />}
               </div>
             )}
           </CardContent>
@@ -156,8 +158,8 @@ export default function DashboardPage() {
             {tools.length > 0 ? (
               <ReactECharts option={toolOption} style={{ height: 280 }} />
             ) : (
-              <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
-                {loading ? "加载中..." : "暂无数据"}
+              <div className="h-[280px] flex items-center justify-center">
+                {loading ? <LoadingState className="py-0" /> : <EmptyState className="py-0" />}
               </div>
             )}
           </CardContent>
@@ -180,9 +182,7 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : (
-            <div className="py-8 text-center text-muted-foreground text-sm">
-              {loading ? "加载中..." : "暂无错误"}
-            </div>
+            loading ? <LoadingState className="py-8" /> : <EmptyState text="暂无错误" className="py-8" />
           )}
         </CardContent>
       </Card>
@@ -260,7 +260,9 @@ function QualityOverviewCard({ quality, loading, seeding, onSeed }: {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="h-24 flex items-center justify-center text-muted-foreground text-sm">加载中...</div>
+          <div className="h-24 flex items-center justify-center">
+            <LoadingState className="py-0" />
+          </div>
         ) : !hasData ? (
           <div className="h-24 flex flex-col items-center justify-center gap-3 text-muted-foreground text-sm">
             <span>暂无评测数据</span>

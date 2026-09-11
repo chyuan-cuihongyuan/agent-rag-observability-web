@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { evalApi, type EvalTaskDetail, type CompareItem } from "@/lib/api";
+import { EmptyState } from "@/components/state/empty-state";
 
 export default function EvalComparePage() {
   const [tasks, setTasks] = useState<EvalTaskDetail[]>([]);
@@ -182,8 +183,8 @@ export default function EvalComparePage() {
 
       {comparison.length === 0 && task1 && task2 && !loading && (
         <Card>
-          <CardContent className="py-8 text-center text-muted-foreground text-sm">
-            暂无对比结果，请选择已完成状态的任务进行对比
+          <CardContent>
+            <EmptyState text="暂无对比结果" description="请选择已完成状态的任务进行对比" />
           </CardContent>
         </Card>
       )}

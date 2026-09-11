@@ -7,6 +7,7 @@ import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
 import {evalApi, type EvalResult, type EvalTaskDetail} from "@/lib/api";
+import {LoadingState} from "@/components/state/loading-state";
 
 export default function EvalTaskDetailPage() {
   const { taskId } = useParams<{ taskId: string }>();
@@ -95,7 +96,7 @@ export default function EvalTaskDetailPage() {
     }
   }
 
-  if (loading && !task) return <div className="p-6 text-center text-muted-foreground">加载中...</div>;
+  if (loading && !task) return <LoadingState />;
 
   return (
     <div className="p-6 space-y-6">

@@ -7,6 +7,9 @@ import {Badge} from "@/components/ui/badge";
 import {type FullTrace, type MemoryRecallLog, queryApi, type ToolCallLog, type TraceQuality} from "@/lib/api";
 import {TraceWaterfall} from "@/components/trace/TraceWaterfall";
 import {ErrorHighlight} from "@/components/trace/ErrorHighlight";
+import {EmptyState} from "@/components/state/empty-state";
+import {ErrorState} from "@/components/state/error-state";
+import {LoadingState} from "@/components/state/loading-state";
 
 export default function TraceDetailPage() {
   const { traceId } = useParams<{ traceId: string }>();
@@ -33,9 +36,9 @@ export default function TraceDetailPage() {
     }
   }, [traceId, loadTrace]);
 
-  if (loading) return <div className="p-6 text-center text-muted-foreground">加载中...</div>;
-  if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
-  if (!trace) return <div className="p-6 text-center text-muted-foreground">未找到 Trace</div>;
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={loadTrace} />;
+  if (!trace) return <EmptyState text="未找到 Trace" />;
 
   return (
     <div className="p-6 space-y-6">
