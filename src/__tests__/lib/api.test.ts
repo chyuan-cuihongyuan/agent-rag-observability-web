@@ -11,6 +11,7 @@ import {
   patrolApi,
   caseApi,
   gateApi,
+  schedulerApi,
   ApiError,
   isBackendUnavailable,
   isApiUnavailableError,
@@ -739,6 +740,37 @@ describe("API 客户端单元测试", () => {
       await evalApi.listDatasetVersions("ds-9");
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining("/api/v1/eval/dataset/ds-9/versions"),
+        expect.any(Object)
+      );
+    });
+  });
+
+  describe("调度健康 API（工单 0189）", () => {
+    it("应该查询调度任务状态列表并解包信封", async () => {
+      const statuses = [
+        { task: "patrol", lastRunAt: "2026-09-11 10:00:00", lastResult: "SUCCESS", nextHint: "每小时整点" },
+        { task: "slo", lastRunAt: null, lastResult: null, nextHint: null },
+      ];
+      mockFetch.mockResolvedValueOnce(createEnvelopeResponse(statuses));
+
+      const result = await schedulerApi.status();
+
+      expect(result).toEqual(statuses);
+      expect(result[0].task).toBe("patrol");
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/v1/schedulers/status"),
+        expect.any(Object)
+      );
+    });
+
+    it("应该解析空任务列表（后端未注册任务时的永未运行语义）", async () => {
+      mockFetch.mockResolvedValueOnce(createEnvelopeResponse([]));
+
+      const result = await schedulerApi.status();
+
+      expect(result).toEqual([]);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/v1/schedulers/status"),
         expect.any(Object)
       );
     });

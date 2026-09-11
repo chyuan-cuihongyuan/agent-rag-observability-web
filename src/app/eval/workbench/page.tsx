@@ -1,12 +1,13 @@
 "use client";
 
 /**
- * 评测工作台（工单 0140 T1）— 五区块布局：
+ * 评测工作台（工单 0140 T1 五区块 + 工单 0189 Z6 第六区块）：
  * ①三池与版本管理（golden/challenge/wrong 池 tab + 版本列表 + 复制新版本/冻结）
  * ②Case 池（候选列表/来源筛选/上下文快照/批量回填错题集/忽略/归因标注）
  * ③归因视图（四分层分布环形图 + 时间窗筛选）
  * ④门禁结果（最新 backtest PASS/BLOCK 横幅 + 触发规则明细 + 历史列表）
  * ⑤巡检状态（最近一轮汇总 + 最近失败 + 手动拨测）
+ * ⑥调度健康（定时任务最近运行/结果/下次提示表；后端未就绪时空数据兜底）
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -20,6 +21,7 @@ import {
   evalApi,
   gateApi,
   patrolApi,
+  schedulerApi,
   type AttributionStatRow,
   type CaseCandidate,
   type EvalDatasetDetail,
@@ -27,6 +29,7 @@ import {
   type GateRule,
   type PatrolRecord,
   type PatrolRoundSummary,
+  type SchedulerStatus,
 } from "@/lib/api";
 
 const POOLS = ["golden", "challenge", "wrong"] as const;
@@ -61,6 +64,7 @@ export default function EvalWorkbenchPage() {
           <TabsTrigger value="attribution">归因视图</TabsTrigger>
           <TabsTrigger value="gates">门禁结果</TabsTrigger>
           <TabsTrigger value="patrol">巡检状态</TabsTrigger>
+          <TabsTrigger value="schedulers">调度健康</TabsTrigger>
         </TabsList>
         <TabsContent value="pools">
           <PoolsPanel />
@@ -76,6 +80,9 @@ export default function EvalWorkbenchPage() {
         </TabsContent>
         <TabsContent value="patrol">
           <PatrolPanel />
+        </TabsContent>
+        <TabsContent value="schedulers">
+          <SchedulerPanel />
         </TabsContent>
       </Tabs>
     </div>
@@ -729,6 +736,96 @@ function PatrolPanel() {
     </div>
   );
 }
+
+/** ⑥调度健康（工单 0189 Z6）：定时任务最近运行/结果/下次提示；后端未就绪时兜底空数据，不阻塞页面 */
+function SchedulerPanel() {
+  const [rows, setRows] = useState<SchedulerStatus[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    try {
+      // 契约：{code:"0000",info,data:[{task,lastRunAt,lastResult,nextHint}]}；
+      // 后端 0189 尚未落地或请求失败时以空数据兜底（catch → []），与巡检面板同模式
+      const res = await schedulerApi.status().catch(() => []);
+      setRows(res ?? []);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-base">调度健康（定时任务）</CardTitle>
+        <Button size="sm" variant="outline" onClick={load}>
+          刷新
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="py-4 text-center text-muted-foreground text-sm">加载中...</div>
+        ) : rows.length === 0 ? (
+          <div className="py-4 text-center text-muted-foreground text-sm" data-testid="scheduler-empty">
+            暂无运行记录
+          </div>
+        ) : (
+          <table className="w-full text-sm" data-testid="scheduler-table">
+            <thead>
+              <tr className="border-b text-left text-muted-foreground">
+                <th className="py-2">任务</th>
+                <th className="py-2">最近运行</th>
+                <th className="py-2">结果</th>
+                <th className="py-2">下次提示</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.task} className="border-b last:border-0" data-testid="scheduler-row">
+                  <td className="py-2">
+                    {SCHEDULER_TASK_LABELS[r.task] ?? r.task}
+                    <span className="ml-2 font-mono text-xs text-muted-foreground">{r.task}</span>
+                  </td>
+                  <td className="py-2 text-xs text-muted-foreground">{r.lastRunAt || "从未运行"}</td>
+                  <td className="py-2">
+                    {r.lastResult ? (
+                      <Badge
+                        variant={
+                          r.lastResult === "SUCCESS"
+                            ? "default"
+                            : r.lastResult === "FAIL"
+                              ? "destructive"
+                              : "outline"
+                        }
+                      >
+                        {r.lastResult}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="py-2 text-xs text-muted-foreground">{r.nextHint || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** 定时任务名中文标签（工单 0189：巡检/挖掘/保留清理/漂移检测/SLO 计算） */
+const SCHEDULER_TASK_LABELS: Record<string, string> = {
+  patrol: "巡检拨测",
+  mining: "Case 挖掘",
+  retention: "保留清理",
+  drift: "漂移检测",
+  slo: "SLO 计算",
+};
 
 function StatCard({ label, value, tone }: { label: string; value: number | string; tone?: string }) {
   return (

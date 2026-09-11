@@ -325,6 +325,25 @@ export const gateApi = {
     ),
 };
 
+// ========== 调度健康（工单 0189 Z6 前端；后端端点可能滞后落地，调用方须 catch 兜底空数据） ==========
+
+/** 定时任务运行状态（/api/v1/schedulers/status；任务注册表模式收集） */
+export interface SchedulerStatus {
+  /** 任务名：patrol / mining / retention / drift / slo */
+  task: string;
+  /** 最近运行时间（空=从未运行） */
+  lastRunAt?: string | null;
+  /** 最近一次运行结果（如 SUCCESS / FAIL） */
+  lastResult?: string | null;
+  /** 下次触发提示（cron 或人话描述；可空） */
+  nextHint?: string | null;
+}
+
+export const schedulerApi = {
+  /** 查询全部定时任务最近运行状态 */
+  status: () => request<SchedulerStatus[]>(`/api/v1/schedulers/status`),
+};
+
 // Types
 export interface Overview {
   totalRequests: number;
