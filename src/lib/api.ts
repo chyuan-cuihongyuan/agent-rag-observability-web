@@ -1,3 +1,12 @@
+import type { ZodType } from "zod";
+
+import {
+  overviewSchema,
+  trendListSchema,
+  traceListSchema,
+  qualityOverviewSchema,
+} from "@/lib/schemas";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 /**
@@ -95,11 +104,32 @@ export function buildUrl(path: string): string {
   return `${API_BASE}${normalized}`;
 }
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
+/**
+ * AUTOLOOP al-04 / 工单 1004：响应边界校验（借鉴 colinhacks/zod）。
+ * schema 由 safeParse 校验：结构性损坏抛 ApiError(code=ESCHEMA) 并带字段路径摘要。
+ * 导出以供单测锁定行为。
+ */
+export function parseWithSchema<T>(data: unknown, schema: ZodType<T>): T {
+  const result = schema.safeParse(data);
+  if (!result.success) {
+    const summary = result.error.issues
+      .slice(0, 5)
+      .map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`)
+      .join("; ");
+    throw new ApiError(`响应结构校验失败: ${summary}`, undefined, "ESCHEMA");
+  }
+  return result.data;
+}
+
+/** 请求选项：透传 fetch init，另可携带响应校验 schema（输出类型由调用方 T 收口） */
+type RequestOptions = RequestInit & { schema?: ZodType };
+
+async function request<T>(path: string, options?: RequestOptions): Promise<T> {
+  const { schema, ...init } = options ?? {};
   try {
     const res = await fetch(buildUrl(path), {
       headers: { "Content-Type": "application/json", ...options?.headers },
-      ...options,
+      ...init,
     });
 
     const text = await res.text();
@@ -116,7 +146,8 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
       throw new ApiError(errorMessage, res.status, undefined);
     }
 
-    return parseResponse<T>(text, res.status);
+    const data = parseResponse<T>(text, res.status);
+    return schema ? (parseWithSchema(data, schema) as T) : data;
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
@@ -133,9 +164,15 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 // Dashboard
 export const dashboardApi = {
-  overview: (days = 1) => request<Overview>(`/api/v1/dashboard/overview?days=${days}`),
+  overview: (days = 1) =>
+    request<Overview>(`/api/v1/dashboard/overview?days=${days}`, {
+      schema: overviewSchema,
+    }),
   trend: (days = 1, interval = "hour") =>
-    request<TrendItem[]>(`/api/v1/dashboard/trend?days=${days}&interval=${interval}`),
+    request<TrendItem[]>(
+      `/api/v1/dashboard/trend?days=${days}&interval=${interval}`,
+      { schema: trendListSchema }
+    ),
   branchDistribution: (days = 7) =>
     request<BranchItem[]>(`/api/v1/dashboard/branch_distribution?days=${days}`),
   toolUsage: (days = 7) =>
@@ -152,6 +189,7 @@ export const queryApi = {
     request<PagedResult<TraceListItem>>(`/api/v1/query/trace/list`, {
       method: "POST",
       body: JSON.stringify(body),
+      schema: traceListSchema,
     }),
   bySession: (sessionId: string, page = 1, size = 20) =>
     request<AgentDecision[]>(`/api/v1/query/session/${sessionId}?page=${page}&size=${size}`),
@@ -180,7 +218,9 @@ export const evalApi = {
   compareResults: (task1: string, task2: string) =>
     request<CompareItem[]>(`/api/v1/eval/result/compare?task1=${task1}&task2=${task2}`),
   qualityOverview: (limit = 10) =>
-    request<QualityOverview>(`/api/v1/eval/quality_overview?limit=${limit}`),
+    request<QualityOverview>(`/api/v1/eval/quality_overview?limit=${limit}`, {
+      schema: qualityOverviewSchema,
+    }),
   /** 生成评测种子数据（供主页质量概览面板） */
   seedEval: (taskCount = 3, itemsPerTask = 18) =>
     request<{ totalResults: number; taskCount: number; itemsPerTask: number; costTimeMs: number }>(
