@@ -62,9 +62,18 @@ describe("schemas 宽容式校验", () => {
 
   it("分页结构：list 缺失即失败，total 为字符串即失败", () => {
     const item = {
-      traceId: "t1", sessionId: "s1", ownerUserId: "u1", sourceService: "svc",
-      agentId: "a1", userQuery: "q", intentType: "i", branchType: "b",
-      agentStatus: "ok", costTimeMs: 1, modelVersion: "m", createTime: "c",
+      traceId: "t1",
+      sessionId: "s1",
+      ownerUserId: "u1",
+      sourceService: "svc",
+      agentId: "a1",
+      userQuery: "q",
+      intentType: "i",
+      branchType: "b",
+      agentStatus: "ok",
+      costTimeMs: 1,
+      modelVersion: "m",
+      createTime: "c",
     };
     expect(() => parseWithSchema({ total: 1, page: 1, size: 1 }, traceListSchema)).toThrow(
       ApiError
@@ -122,9 +131,18 @@ describe("request seam 集成（fetch mock）", () => {
     mockFetchOnce({
       list: [
         {
-          traceId: "t1", sessionId: "s1", ownerUserId: "u1", sourceService: "svc",
-          agentId: "a1", userQuery: "q", intentType: "i", branchType: "b",
-          agentStatus: "ok", costTimeMs: 1, modelVersion: "m", createTime: "c",
+          traceId: "t1",
+          sessionId: "s1",
+          ownerUserId: "u1",
+          sourceService: "svc",
+          agentId: "a1",
+          userQuery: "q",
+          intentType: "i",
+          branchType: "b",
+          agentStatus: "ok",
+          costTimeMs: 1,
+          modelVersion: "m",
+          createTime: "c",
         },
       ],
       total: 1,
