@@ -14,8 +14,30 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Agent+RAG Observability",
   description: "Agent + RAG 全链路监控评估平台",
+  // SELFLOOP2 loop-225：元数据完整化（template/OG/robots）；basePath=/obs
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+  ),
+  title: {
+    default: "Agent+RAG Observability",
+    template: "%s | Agent+RAG Observability",
+  },
+  keywords: ["Agent", "RAG", "可观测性", "评测", "监控"],
+  openGraph: {
+    title: "Agent+RAG Observability",
+    description: "Agent + RAG 全链路监控评估平台",
+    type: "website",
+    locale: "zh_CN",
+    siteName: "Agent+RAG Observability",
+  },
+  twitter: {
+    card: "summary",
+    title: "Agent+RAG Observability",
+    description: "Agent + RAG 全链路监控评估平台",
+  },
+  // 内网监控台：禁止搜索引擎索引
+  robots: { index: false, follow: false },
 };
 
 export default function RootLayout({

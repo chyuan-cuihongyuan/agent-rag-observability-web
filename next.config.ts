@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   // 监控前端通过 chyuan.ltd/obs/ 路径访问（共用单域名 SSL 证书）
   basePath: '/obs',
+  // SELFLOOP2 loop-225：安全与质量基线——不暴露框架头 + 开发期双渲染暴露副作用
+  poweredByHeader: false,
+  reactStrictMode: true,
 
   async rewrites() {
     return [
