@@ -83,9 +83,21 @@ function parseResponse<T>(text: string, httpStatus: number): T {
   return json as T;
 }
 
+/**
+ * 构造请求 URL：拒绝绝对/协议相对路径，强制锚定 API_BASE。
+ * 防 path 注入逃逸后端基址（Mimosa SSRF 高位修复，loop-205）。导出以供单测锁定行为。
+ */
+export function buildUrl(path: string): string {
+  if (/^[a-z][a-z0-9+.-]*:/i.test(path) || path.startsWith("//")) {
+    throw new ApiError(`非法 API 路径: ${path}`, undefined, "E400");
+  }
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return `${API_BASE}${normalized}`;
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   try {
-    const res = await fetch(`${API_BASE}${path}`, {
+    const res = await fetch(buildUrl(path), {
       headers: { "Content-Type": "application/json", ...options?.headers },
       ...options,
     });

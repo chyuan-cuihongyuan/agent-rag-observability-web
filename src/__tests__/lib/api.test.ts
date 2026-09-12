@@ -9,6 +9,7 @@ import {
   queryApi,
   evalApi,
   ApiError,
+  buildUrl,
   isBackendUnavailable,
   isApiUnavailableError,
 } from "@/lib/api";
@@ -634,5 +635,28 @@ describe("API 客户端单元测试", () => {
 
       expect(result).toEqual(directData);
     });
+  });
+});
+
+// ========== URL 构造安全（loop-205：SSRF 逃逸防护的防回归） ==========
+
+describe("buildUrl 路径安全", () => {
+  it.each([
+    ["http 绝对 URL", "http://evil.com/api"],
+    ["https 绝对 URL", "https://evil.com/api"],
+    ["协议相对 URL", "//evil.com/api"],
+    ["其他 scheme", "ftp://evil.com/x"],
+  ])("应拒绝 %s", (_name, evilPath) => {
+    expect(() => buildUrl(evilPath as string)).toThrow("非法 API 路径");
+  });
+
+  it("合法相对路径锚定 API_BASE 并补前导斜杠", () => {
+    expect(buildUrl("/api/v1/overview")).toBe("/api/v1/overview");
+    expect(buildUrl("api/v1/overview")).toBe("/api/v1/overview");
+  });
+
+  it("非法路径抛 ApiError（request 的唯一 URL 出口已被守卫）", () => {
+    expect(() => buildUrl("//evil.com")).toThrow(ApiError);
+    expect(() => buildUrl("//evil.com")).toThrow("非法 API 路径");
   });
 });
