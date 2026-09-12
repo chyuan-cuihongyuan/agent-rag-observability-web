@@ -41,9 +41,45 @@ export class ApiError extends Error {
  * 判断错误消息是否表示后端服务不可用
  */
 export function isBackendUnavailable(message: string): boolean {
-  return ["Failed to fetch", "NetworkError", "Load failed", "CORS"].some((keyword) =>
+  return ["Failed to fetch", "NetworkError", "Load failed", "CORS", "abort", "超时"].some((keyword) =>
     message.includes(keyword)
   );
+}
+
+/** 请求超时基线（SELFLOOP2 loop-210）：默认 15s，NEXT_PUBLIC_API_TIMEOUT_MS 可覆盖。导出以供单测 */
+export function getTimeoutMs(): number {
+  const n = Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS);
+  return Number.isFinite(n) && n > 0 ? n : 15000;
+}
+
+/** 超时 signal：原生 AbortSignal.timeout 优先，缺失时（jsdom/旧浏览器）手动定时 abort。导出以供单测 */
+export function createTimeoutSignal(ms: number): AbortSignal {
+  if (typeof AbortSignal.timeout === "function") {
+    return AbortSignal.timeout(ms);
+  }
+  const ctrl = new AbortController();
+  setTimeout(() => ctrl.abort(), ms);
+  return ctrl.signal;
+}
+
+/** 调用方 signal 与超时 signal 合并（AbortSignal.any 不可用时监听联动回退）。导出以供单测 */
+export function mergeSignals(timeoutSignal: AbortSignal, callerSignal?: AbortSignal | null): AbortSignal {
+  if (!callerSignal) {
+    return timeoutSignal;
+  }
+  if (typeof AbortSignal.any === "function") {
+    return AbortSignal.any([timeoutSignal, callerSignal]);
+  }
+  // 兼容回退（jsdom/旧环境）：任一来源中止即整体中止
+  const ctrl = new AbortController();
+  const onAbort = () => ctrl.abort();
+  if (timeoutSignal.aborted || callerSignal.aborted) {
+    ctrl.abort();
+  } else {
+    timeoutSignal.addEventListener("abort", onAbort, { once: true });
+    callerSignal.addEventListener("abort", onAbort, { once: true });
+  }
+  return ctrl.signal;
 }
 
 /**
@@ -126,10 +162,13 @@ type RequestOptions = RequestInit & { schema?: ZodType };
 
 async function request<T>(path: string, options?: RequestOptions): Promise<T> {
   const { schema, ...init } = options ?? {};
+  const timeoutMs = getTimeoutMs();
+  const timeoutSignal = createTimeoutSignal(timeoutMs);
   try {
     const res = await fetch(buildUrl(path), {
-      headers: { "Content-Type": "application/json", ...options?.headers },
       ...init,
+      signal: mergeSignals(timeoutSignal, init.signal),
+      headers: { "Content-Type": "application/json", ...options?.headers },
     });
 
     const text = await res.text();

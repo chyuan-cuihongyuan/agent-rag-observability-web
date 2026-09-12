@@ -10,6 +10,9 @@ import {
   evalApi,
   ApiError,
   buildUrl,
+  getTimeoutMs,
+  mergeSignals,
+  createTimeoutSignal,
   isBackendUnavailable,
   isApiUnavailableError,
 } from "@/lib/api";
@@ -658,5 +661,61 @@ describe("buildUrl 路径安全", () => {
   it("非法路径抛 ApiError（request 的唯一 URL 出口已被守卫）", () => {
     expect(() => buildUrl("//evil.com")).toThrow(ApiError);
     expect(() => buildUrl("//evil.com")).toThrow("非法 API 路径");
+  });
+});
+
+// ========== 超时基线（loop-210：AbortSignal.timeout 防回归） ==========
+
+describe("API 超时基线", () => {
+  const realEnv = process.env.NEXT_PUBLIC_API_TIMEOUT_MS;
+
+  afterEach(() => {
+    if (realEnv === undefined) delete process.env.NEXT_PUBLIC_API_TIMEOUT_MS;
+    else process.env.NEXT_PUBLIC_API_TIMEOUT_MS = realEnv;
+  });
+
+  /** 挂死 fetch：仅在收到 abort signal 时以 AbortError 拒绝 */
+  function hangingFetch() {
+    return jest.fn().mockImplementation((_url: string, init?: RequestInit) =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => {
+          const e = new Error("The operation was aborted");
+          e.name = "AbortError";
+          reject(e);
+        });
+      })
+    );
+  }
+
+  it("挂死请求在超时阈值后抛 ApiError（isUnavailable=true）", async () => {
+    process.env.NEXT_PUBLIC_API_TIMEOUT_MS = "50";
+    mockFetch.mockImplementation(hangingFetch());
+
+    await expect(dashboardApi.overview()).rejects.toMatchObject({
+      isUnavailable: true,
+    });
+  }, 10000);
+
+  it("getTimeoutMs：默认 15000，env 覆盖生效，非法值回退默认", () => {
+    delete process.env.NEXT_PUBLIC_API_TIMEOUT_MS;
+    expect(getTimeoutMs()).toBe(15000);
+    process.env.NEXT_PUBLIC_API_TIMEOUT_MS = "3000";
+    expect(getTimeoutMs()).toBe(3000);
+    process.env.NEXT_PUBLIC_API_TIMEOUT_MS = "abc";
+    expect(getTimeoutMs()).toBe(15000);
+  });
+
+  it("mergeSignals：调用方中止即整体中止（合并 signal 生效）", () => {
+    const timeoutSignal = createTimeoutSignal(5000);
+    const caller = new AbortController();
+    const merged = mergeSignals(timeoutSignal, caller.signal);
+    expect(merged.aborted).toBe(false);
+    caller.abort();
+    expect(merged.aborted).toBe(true);
+  });
+
+  it("mergeSignals：无调用方 signal 时返回超时 signal", () => {
+    const timeoutSignal = createTimeoutSignal(5000);
+    expect(mergeSignals(timeoutSignal, undefined)).toBe(timeoutSignal);
   });
 });
