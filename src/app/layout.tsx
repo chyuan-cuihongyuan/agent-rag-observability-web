@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
+// AUTOLOOP al-28 / 工单 1028：TanStack Query Provider（试点批）
+import { QueryProvider } from "@/components/providers/query-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -52,10 +54,12 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex">
-        <Sidebar />
-        <main className="flex-1 overflow-auto bg-background">
-          {children}
-        </main>
+        <QueryProvider>
+          <Sidebar />
+          <main className="flex-1 overflow-auto bg-background">
+            {children}
+          </main>
+        </QueryProvider>
         <footer className="fixed bottom-2 right-3 text-[11px] text-muted-foreground/70 z-50 pointer-events-auto">
           <a
             href="https://beian.miit.gov.cn/"

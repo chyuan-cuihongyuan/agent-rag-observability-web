@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ReactECharts from "echarts-for-react";
@@ -9,55 +10,72 @@ import { EmptyState } from "@/components/state/empty-state";
 import { LoadingState } from "@/components/state/loading-state";
 
 export default function DashboardPage() {
-  const [overview, setOverview] = useState<Overview | null>(null);
-  const [trend, setTrend] = useState<TrendItem[]>([]);
+  const [days, setDays] = useState("1");
+  const queryClient = useQueryClient();
+
+  // AUTOLOOP al-28 / 工单 1028：overview/trend 试点键化（TanStack Query），
+  // 其余四个查询仍走 loadRest（渐进批次见 docs/05 评估 §5）
+  const overviewQuery = useQuery({
+    queryKey: ["dashboard", "overview", days],
+    queryFn: () => dashboardApi.overview(parseInt(days)).catch(() => null),
+  });
+  const trendQuery = useQuery({
+    queryKey: ["dashboard", "trend", days],
+    queryFn: () =>
+      dashboardApi
+        .trend(parseInt(days), parseInt(days) <= 1 ? "hour" : "day")
+        .catch(() => [] as TrendItem[]),
+  });
+  const overview = overviewQuery.data ?? null;
+  const trend = trendQuery.data ?? [];
+
   const [branches, setBranches] = useState<BranchItem[]>([]);
   const [tools, setTools] = useState<ToolItem[]>([]);
   const [errors, setErrors] = useState<ErrorItem[]>([]);
   const [quality, setQuality] = useState<QualityOverview | null>(null);
-  const [days, setDays] = useState("1");
-  const [loading, setLoading] = useState(true);
+  const [restLoading, setRestLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
 
-  const loadAll = useCallback(async () => {
-    setLoading(true);
+  const loadRest = useCallback(async () => {
+    setRestLoading(true);
     try {
       const d = parseInt(days);
-      const [ov, tr, br, tl, er, ql] = await Promise.all([
-        dashboardApi.overview(d).catch(() => null),
-        dashboardApi.trend(d, d <= 1 ? "hour" : "day").catch(() => []),
+      const [br, tl, er, ql] = await Promise.all([
         dashboardApi.branchDistribution(d).catch(() => []),
         dashboardApi.toolUsage(d).catch(() => []),
         dashboardApi.errorRanking(d).catch(() => []),
         evalApi.qualityOverview().catch(() => null),
       ]);
-      if (ov) setOverview(ov);
-      setTrend(tr);
       setBranches(br);
       setTools(tl);
       setErrors(er);
       if (ql) setQuality(ql);
     } finally {
-      setLoading(false);
+      setRestLoading(false);
     }
   }, [days]);
 
   useEffect(() => {
-    void Promise.resolve().then(loadAll);
-  }, [loadAll]);
+    void Promise.resolve().then(loadRest);
+  }, [loadRest]);
 
-  /** 一键生成示例评测数据（后端 /api/v1/seed/eval 接口本就放行，无需 auth-key） */
+  const loading = overviewQuery.isLoading || trendQuery.isLoading || restLoading;
+
+  /** 一键生成示例评测数据；完成后精确失效全部 dashboard 键 */
   const handleSeed = useCallback(async () => {
     setSeeding(true);
     try {
       await evalApi.seedEval(3, 18);
-      await loadAll();
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+        loadRest(),
+      ]);
     } catch {
       // 种子接口失败时静默，用户可重试
     } finally {
       setSeeding(false);
     }
-  }, [loadAll]);
+  }, [loadRest, queryClient]);
 
   const trendOption = {
     tooltip: { trigger: "axis" },
