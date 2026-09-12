@@ -49,3 +49,6 @@ CLAUDE.md
 *.md
 !README.md
 !**/README.md
+
+# AUTOLOOP al-05：安全策略文件入库
+!.github/SECURITY.md
