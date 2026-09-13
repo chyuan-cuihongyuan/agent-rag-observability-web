@@ -9,7 +9,8 @@ export default function Loading() {
     <div className="space-y-6 p-6" aria-busy="true" aria-label="加载中">
       <div className="grid gap-4 md:grid-cols-3">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
+          <div key={i} className="stagger-item rounded-lg border bg-card p-6 shadow-sm space-y-4"
+            style={{ "--stagger-i": i } as React.CSSProperties}>
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-8 w-16" />
             <Skeleton className="h-3 w-full" />
