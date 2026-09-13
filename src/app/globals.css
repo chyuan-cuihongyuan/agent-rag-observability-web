@@ -128,3 +128,15 @@
     @apply font-sans;
   }
 }
+/* b-15（工单 1126）：prefers-reduced-motion——动效敏感用户的无障碍兜底
+   （WCAG 2.3.3；shadcn/ui 惯例的全局覆盖层） */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
