@@ -4,6 +4,8 @@ import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 // AUTOLOOP al-28 / 工单 1028：TanStack Query Provider（试点批）
 import { QueryProvider } from "@/components/providers/query-provider";
+// b-18 / 工单 1132：web-vitals 采集（环境变量开关式，默认关）
+import { WebVitalsReporter } from "@/components/web-vitals-reporter";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,6 +56,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex">
+        <WebVitalsReporter />
         <QueryProvider>
           <Sidebar />
           <main className="flex-1 overflow-auto bg-background">
