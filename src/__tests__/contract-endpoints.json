@@ -31,7 +31,15 @@
     "/api/v1/query/trace",
     "/api/v1/query/user//traces",
     "/api/v1/schedulers/status",
-    "/api/v1/seed/eval"
+    "/api/v1/seed/eval",
+    "/api/v1/notifications",
+    "/api/v1/notifications/events",
+    "/api/v1/notifications/subscriptions",
+    "/api/v1/notifications/unread-count",
+    "/api/v1/notifications//read",
+    "/api/v1/notifications/read-all",
+    "/api/v1/notifications/digest-preview",
+    "/api/v1/notifications/render-preview"
   ],
   "backendPrefixes": [
     "/api/v1/alerts/silences",
@@ -65,7 +73,15 @@
     "/api/v1/schedulers",
     "/api/v1/seed",
     "/api/v1/sessions",
-    "/api/v1/usage"
+    "/api/v1/usage",
+    "/api/v1/notifications",
+    "/api/v1/notifications/events",
+    "/api/v1/notifications/subscriptions",
+    "/api/v1/notifications/unread-count",
+    "/api/v1/notifications//read",
+    "/api/v1/notifications/read-all",
+    "/api/v1/notifications/digest-preview",
+    "/api/v1/notifications/render-preview"
   ],
   "note": "web 路径（模板变量置空+//归一）必须被某条后端前缀覆盖；后端前缀快照由工单 0240 生成，后端新增前缀需同步更新"
 }

@@ -83,7 +83,7 @@ function parseResponse<T>(text: string, httpStatus: number): T {
   return json as T;
 }
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
+export async function request<T>(path: string, options?: RequestInit): Promise<T> {
   try {
     const res = await fetch(`${API_BASE}${path}`, {
       headers: { "Content-Type": "application/json", ...options?.headers },
