@@ -10,6 +10,10 @@ test: ## jest 测试（同 CI 口径）
 .PHONY: format
 format: ## prettier 全仓格式化
 	npm run format
+.PHONY: audit-permissions
+audit-permissions: ## workflow 最小权限审计（AUTOLOOP al-49）
+	python3 tools/audit_workflow_permissions.py
+
 .PHONY: changelog
 changelog: ## 重新生成 CHANGELOG.md
 	python3 scripts/gen_changelog.py
