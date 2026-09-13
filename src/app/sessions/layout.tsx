@@ -4,3 +4,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "会话查询",
 };
+
+export default function SessionsLayout({ children }: { children: React.ReactNode }) {
+  return children;
+}

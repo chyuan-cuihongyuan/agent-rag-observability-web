@@ -4,3 +4,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "链路查询",
 };
+
+export default function TracesLayout({ children }: { children: React.ReactNode }) {
+  return children;
+}
