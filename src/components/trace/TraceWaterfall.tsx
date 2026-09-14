@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDuration } from "@/lib/format-duration";
+import { truncate } from "@/lib/truncate";
 import type { FullTrace, ToolCallLog, MemoryRecallLog } from "@/lib/api";
 
 interface WaterfallStage {
@@ -160,7 +161,7 @@ function buildStages(trace: FullTrace): WaterfallStage[] {
       stages.push({
         name: `\u{1F527} ${tc.toolName}`,
         costMs: tc.costTimeMs || 0,
-        detail: `${statusIcon} ${truncateStr(tc.toolInput, 30)}`,
+        detail: `${statusIcon} ${truncate(tc.toolInput, 30)}`,
         color: "#f97316",
         icon: "",
       });
@@ -221,9 +222,4 @@ function formatStageName(stage: string): string {
     bm25: "BM25 检索",
   };
   return nameMap[stage] || stage;
-}
-
-function truncateStr(text: string | undefined | null, maxLen: number): string {
-  if (!text) return "-";
-  return text.length > maxLen ? text.slice(0, maxLen) + "..." : text;
 }

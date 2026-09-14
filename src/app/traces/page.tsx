@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { queryApi, type TraceListItem } from "@/lib/api";
 import { formatDuration } from "@/lib/format-duration";
+import { truncate } from "@/lib/truncate";
 import { EmptyState } from "@/components/state/empty-state";
 import { ErrorState } from "@/components/state/error-state";
 import { LoadingState } from "@/components/state/loading-state";
@@ -283,9 +284,4 @@ function BranchBadge({ branch }: { branch?: string }) {
       {branch}
     </span>
   );
-}
-
-function truncate(text: string, maxLen: number): string {
-  if (!text) return "-";
-  return text.length > maxLen ? text.slice(0, maxLen) + "..." : text;
 }

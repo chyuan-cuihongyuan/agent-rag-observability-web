@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/state/empty-state";
 import { ErrorState } from "@/components/state/error-state";
 import { LoadingState } from "@/components/state/loading-state";
 import { CopyButton } from "@/components/ui/copy-button";
+import { truncate } from "@/lib/truncate";
 
 export default function TraceDetailPage() {
   const { traceId } = useParams<{ traceId: string }>();
@@ -554,10 +555,4 @@ function StatusInfo({
       </CardContent>
     </Card>
   );
-}
-
-/** 截断文本 */
-function truncate(text: string | undefined | null, maxLen: number): string {
-  if (!text) return "-";
-  return text.length > maxLen ? text.slice(0, maxLen) + "..." : text;
 }
