@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { queryApi, type TraceListItem } from "@/lib/api";
+import { formatDuration } from "@/lib/format-duration";
 import { EmptyState } from "@/components/state/empty-state";
 import { ErrorState } from "@/components/state/error-state";
 import { LoadingState } from "@/components/state/loading-state";
@@ -220,7 +221,7 @@ export default function TracesPage() {
                       <td className="py-2 pr-4">
                         <StatusBadge status={t.agentStatus} />
                       </td>
-                      <td className="py-2 pr-4 font-mono">{t.costTimeMs}ms</td>
+                      <td className="py-2 pr-4 font-mono">{formatDuration(t.costTimeMs)}</td>
                       <td className="py-2 pr-4">{t.sourceService}</td>
                       <td className="py-2 text-xs text-muted-foreground">{t.createTime}</td>
                     </tr>

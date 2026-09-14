@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatDuration } from "@/lib/format-duration";
 import type { FullTrace, ToolCallLog, MemoryRecallLog } from "@/lib/api";
 
 interface WaterfallStage {
@@ -30,19 +31,14 @@ export function TraceWaterfall({ trace }: { trace: FullTrace }) {
         <CardTitle className="text-base flex items-center gap-2">
           <span className="text-violet-500">&#9654;</span> 全链路瀑布图
           <Badge variant="outline" className="ml-auto font-mono">
-            总耗时: {formatMs(totalCost)}
+            总耗时: {formatDuration(totalCost)}
           </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-1">
           {stages.map((stage, idx) => (
-            <WaterfallRow
-              key={idx}
-              stage={stage}
-              maxCost={maxCost}
-              totalCost={totalCost}
-            />
+            <WaterfallRow key={idx} stage={stage} maxCost={maxCost} totalCost={totalCost} />
           ))}
         </div>
       </CardContent>
@@ -91,7 +87,7 @@ function WaterfallRow({
 
       {/* 耗时 */}
       <div className="w-20 shrink-0 text-right font-mono text-sm text-muted-foreground">
-        {formatMs(stage.costMs)}
+        {formatDuration(stage.costMs)}
       </div>
 
       {/* 详情 */}
@@ -198,9 +194,14 @@ function buildStages(trace: FullTrace): WaterfallStage[] {
     stages.push({
       name: "LLM 生成",
       costMs: llmCost,
-      detail: [modelVersion, promptTokens ? `P:${promptTokens}` : "", completionTokens ? `C:${completionTokens}` : ""]
-        .filter(Boolean)
-        .join(" / ") || undefined,
+      detail:
+        [
+          modelVersion,
+          promptTokens ? `P:${promptTokens}` : "",
+          completionTokens ? `C:${completionTokens}` : "",
+        ]
+          .filter(Boolean)
+          .join(" / ") || undefined,
       color: "#10b981",
       icon: "\u26A1",
     });
@@ -220,12 +221,6 @@ function formatStageName(stage: string): string {
     bm25: "BM25 检索",
   };
   return nameMap[stage] || stage;
-}
-
-function formatMs(ms: number): string {
-  if (ms < 1) return "<1ms";
-  if (ms < 1000) return `${ms}ms`;
-  return `${(ms / 1000).toFixed(2)}s`;
 }
 
 function truncateStr(text: string | undefined | null, maxLen: number): string {
