@@ -1,15 +1,22 @@
 "use client";
 
-import {useCallback, useEffect, useState} from "react";
-import {useParams} from "next/navigation";
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import {Badge} from "@/components/ui/badge";
-import {type FullTrace, type MemoryRecallLog, queryApi, type ToolCallLog, type TraceQuality} from "@/lib/api";
-import {TraceWaterfall} from "@/components/trace/TraceWaterfall";
-import {ErrorHighlight} from "@/components/trace/ErrorHighlight";
-import {EmptyState} from "@/components/state/empty-state";
-import {ErrorState} from "@/components/state/error-state";
-import {LoadingState} from "@/components/state/loading-state";
+import { useCallback, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  type FullTrace,
+  type MemoryRecallLog,
+  queryApi,
+  type ToolCallLog,
+  type TraceQuality,
+} from "@/lib/api";
+import { TraceWaterfall } from "@/components/trace/TraceWaterfall";
+import { ErrorHighlight } from "@/components/trace/ErrorHighlight";
+import { EmptyState } from "@/components/state/empty-state";
+import { ErrorState } from "@/components/state/error-state";
+import { LoadingState } from "@/components/state/loading-state";
+import { CopyButton } from "@/components/ui/copy-button";
 
 export default function TraceDetailPage() {
   const { traceId } = useParams<{ traceId: string }>();
@@ -136,6 +143,9 @@ function AgentThought({ thought }: { thought?: string }) {
         <div className="bg-muted p-4 rounded-lg whitespace-pre-wrap text-sm font-mono">
           {thought}
         </div>
+        <div className="flex justify-end mt-2">
+          <CopyButton text={thought ?? ""} />
+        </div>
       </CardContent>
     </Card>
   );
@@ -171,13 +181,18 @@ function ToolCallDetail({ toolCalls }: { toolCalls: ToolCallLog[] | null }) {
                   <td className="p-2 text-muted-foreground">{tc.callOrder || idx + 1}</td>
                   <td className="p-2 font-mono">{tc.toolName}</td>
                   <td className="p-2">
-                    <div className="max-w-xs truncate" title={tc.toolInput}>
+                    <div className="max-w-xs truncate flex items-center gap-1" title={tc.toolInput}>
                       {truncate(tc.toolInput, 50)}
+                      <CopyButton text={tc.toolInput ?? ""} className="p-1 h-6" />
                     </div>
                   </td>
                   <td className="p-2">
-                    <div className="max-w-xs truncate" title={tc.toolOutput}>
+                    <div
+                      className="max-w-xs truncate flex items-center gap-1"
+                      title={tc.toolOutput}
+                    >
                       {truncate(tc.toolOutput, 50)}
+                      <CopyButton text={tc.toolOutput ?? ""} className="p-1 h-6" />
                     </div>
                   </td>
                   <td className="p-2 font-mono">{tc.costTimeMs}ms</td>
@@ -236,7 +251,7 @@ function RetrievalStageChart({ stages }: { stages?: string }) {
 
   if (!Array.isArray(parsedStages) || parsedStages.length === 0) return null;
 
-  const maxCost = Math.max(...parsedStages.map(s => s.costTimeMs || 0));
+  const maxCost = Math.max(...parsedStages.map((s) => s.costTimeMs || 0));
 
   return (
     <Card>
@@ -253,7 +268,9 @@ function RetrievalStageChart({ stages }: { stages?: string }) {
               <div className="flex-1 bg-muted rounded-full h-4 overflow-hidden">
                 <div
                   className="bg-cyan-500 h-full rounded-full"
-                  style={{ width: `${maxCost > 0 ? ((stage.costTimeMs || 0) / maxCost) * 100 : 0}%` }}
+                  style={{
+                    width: `${maxCost > 0 ? ((stage.costTimeMs || 0) / maxCost) * 100 : 0}%`,
+                  }}
                 />
               </div>
               <span className="w-16 text-right text-sm font-mono">{stage.costTimeMs || 0}ms</span>
@@ -316,7 +333,8 @@ function traceScoreColor(v?: number | null): string {
 function SourceDocTable({ sourceDocs }: { sourceDocs?: string }) {
   if (!sourceDocs) return null;
 
-  let docs: Array<{ chunkId?: string; snippet?: string; score?: number; documentName?: string }> = [];
+  let docs: Array<{ chunkId?: string; snippet?: string; score?: number; documentName?: string }> =
+    [];
   try {
     docs = JSON.parse(sourceDocs);
   } catch {
@@ -347,9 +365,13 @@ function SourceDocTable({ sourceDocs }: { sourceDocs?: string }) {
               {docs.map((doc, idx) => (
                 <tr key={idx} className="border-b hover:bg-muted/50">
                   <td className="p-2 text-muted-foreground">{idx + 1}</td>
-                  <td className="p-2 font-mono text-xs">{doc.documentName || doc.chunkId || "-"}</td>
+                  <td className="p-2 font-mono text-xs">
+                    {doc.documentName || doc.chunkId || "-"}
+                  </td>
                   <td className="p-2">
-                    <Badge variant="outline">{doc.score ? (doc.score * 100).toFixed(0) + "%" : "-"}</Badge>
+                    <Badge variant="outline">
+                      {doc.score ? (doc.score * 100).toFixed(0) + "%" : "-"}
+                    </Badge>
                   </td>
                   <td className="p-2">
                     <div className="max-w-md truncate" title={doc.snippet}>
@@ -381,7 +403,6 @@ function MemoryRecallList({ recalls }: { recalls: MemoryRecallLog[] | null }) {
 
 /** 记忆检索卡片 */
 function MemoryRecallCard({ recall, index }: { recall: MemoryRecallLog; index: number }) {
-
   return (
     <Card>
       <CardHeader>
@@ -428,13 +449,22 @@ function FinalAnswer({ answer }: { answer?: string }) {
       </CardHeader>
       <CardContent>
         <div className="whitespace-pre-wrap text-sm leading-relaxed">{answer}</div>
+        <div className="flex justify-end mt-2">
+          <CopyButton text={answer} />
+        </div>
       </CardContent>
     </Card>
   );
 }
 
 /** Token 消耗 */
-function TokenUsage({ promptTokens, completionTokens }: { promptTokens?: number; completionTokens?: number }) {
+function TokenUsage({
+  promptTokens,
+  completionTokens,
+}: {
+  promptTokens?: number;
+  completionTokens?: number;
+}) {
   if (!promptTokens && !completionTokens) return null;
 
   const total = (promptTokens || 0) + (completionTokens || 0);
