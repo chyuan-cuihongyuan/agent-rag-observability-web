@@ -4,8 +4,24 @@ import { useCallback, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ReactECharts from "echarts-for-react";
-import { dashboardApi, evalApi, type Overview, type TrendItem, type BranchItem, type ToolItem, type ErrorItem, type QualityOverview } from "@/lib/api";
+import dynamic from "next/dynamic";
+
+// ECharts 懒加载（SELFLOOP3 loop-332，工单 0462/0463）：全量 ECharts 不进首屏
+// 关键 bundle；加载期同高度占位防布局跳动（对齐 agg-web ForceGraph2D 先例）。
+const ReactECharts = dynamic(() => import("echarts-for-react"), {
+  ssr: false,
+  loading: () => <div className="h-[280px] animate-pulse rounded-md bg-muted/40" />,
+});
+import {
+  dashboardApi,
+  evalApi,
+  type Overview,
+  type TrendItem,
+  type BranchItem,
+  type ToolItem,
+  type ErrorItem,
+  type QualityOverview,
+} from "@/lib/api";
 import { EmptyState } from "@/components/state/empty-state";
 import { LoadingState } from "@/components/state/loading-state";
 
@@ -66,10 +82,7 @@ export default function DashboardPage() {
     setSeeding(true);
     try {
       await evalApi.seedEval(3, 18);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
-        loadRest(),
-      ]);
+      await Promise.all([queryClient.invalidateQueries({ queryKey: ["dashboard"] }), loadRest()]);
     } catch {
       // 种子接口失败时静默，用户可重试
     } finally {
@@ -89,18 +102,25 @@ export default function DashboardPage() {
     series: [
       { name: "请求数", type: "bar", data: trend.map((t) => t.request_count) },
       { name: "平均耗时(ms)", type: "line", yAxisIndex: 1, data: trend.map((t) => t.avg_cost_ms) },
-      { name: "失败数", type: "bar", data: trend.map((t) => t.fail_count), itemStyle: { color: "#ef4444" } },
+      {
+        name: "失败数",
+        type: "bar",
+        data: trend.map((t) => t.fail_count),
+        itemStyle: { color: "#ef4444" },
+      },
     ],
   };
 
   const branchOption = {
     tooltip: { trigger: "item" },
-    series: [{
-      type: "pie",
-      radius: ["40%", "70%"],
-      data: branches.map((b) => ({ name: b.branch_type, value: b.count })),
-      label: { show: true, formatter: "{b}: {c}" },
-    }],
+    series: [
+      {
+        type: "pie",
+        radius: ["40%", "70%"],
+        data: branches.map((b) => ({ name: b.branch_type, value: b.count })),
+        label: { show: true, formatter: "{b}: {c}" },
+      },
+    ],
   };
 
   const toolOption = {
@@ -108,9 +128,7 @@ export default function DashboardPage() {
     grid: { left: 120, right: 30, bottom: 30, top: 20 },
     xAxis: { type: "value" },
     yAxis: { type: "category", data: tools.map((t) => t.tool_name) },
-    series: [
-      { name: "调用次数", type: "bar", data: tools.map((t) => t.call_count) },
-    ],
+    series: [{ name: "调用次数", type: "bar", data: tools.map((t) => t.call_count) }],
   };
 
   return (
@@ -130,10 +148,27 @@ export default function DashboardPage() {
       {/* Overview Cards */}
       <div className="grid grid-cols-5 gap-4">
         <StatCard title="总请求数" value={overview?.totalRequests ?? 0} loading={loading} />
-        <StatCard title="成功率" value={overview?.successRate != null ? `${overview.successRate}%` : "-"} loading={loading} />
-        <StatCard title="平均耗时" value={overview?.avgCostTimeMs != null ? `${overview.avgCostTimeMs}ms` : "-"} loading={loading} />
-        <StatCard title="空检索率" value={overview?.emptyRetrievalRate != null ? `${overview.emptyRetrievalRate}%` : "-"} loading={loading} />
-        <StatCard title="失败率" value={overview?.failRate != null ? `${overview.failRate}%` : "-"} loading={loading} color="text-red-500" />
+        <StatCard
+          title="成功率"
+          value={overview?.successRate != null ? `${overview.successRate}%` : "-"}
+          loading={loading}
+        />
+        <StatCard
+          title="平均耗时"
+          value={overview?.avgCostTimeMs != null ? `${overview.avgCostTimeMs}ms` : "-"}
+          loading={loading}
+        />
+        <StatCard
+          title="空检索率"
+          value={overview?.emptyRetrievalRate != null ? `${overview.emptyRetrievalRate}%` : "-"}
+          loading={loading}
+        />
+        <StatCard
+          title="失败率"
+          value={overview?.failRate != null ? `${overview.failRate}%` : "-"}
+          loading={loading}
+          color="text-red-500"
+        />
       </div>
 
       {/* RAG 质量概览（暂不显示）
@@ -142,7 +177,9 @@ export default function DashboardPage() {
 
       {/* Trend Chart */}
       <Card>
-        <CardHeader><CardTitle className="text-base">请求趋势</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">请求趋势</CardTitle>
+        </CardHeader>
         <CardContent>
           {trend.length > 0 ? (
             <ReactECharts option={trendOption} style={{ height: 300 }} />
@@ -157,7 +194,9 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 gap-4">
         {/* Branch Distribution */}
         <Card>
-          <CardHeader><CardTitle className="text-base">分支类型分布</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base">分支类型分布</CardTitle>
+          </CardHeader>
           <CardContent>
             {branches.length > 0 ? (
               <ReactECharts option={branchOption} style={{ height: 280 }} />
@@ -171,7 +210,9 @@ export default function DashboardPage() {
 
         {/* Tool Usage */}
         <Card>
-          <CardHeader><CardTitle className="text-base">工具使用统计</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base">工具使用统计</CardTitle>
+          </CardHeader>
           <CardContent>
             {tools.length > 0 ? (
               <ReactECharts option={toolOption} style={{ height: 280 }} />
@@ -186,12 +227,17 @@ export default function DashboardPage() {
 
       {/* Error Ranking */}
       <Card>
-        <CardHeader><CardTitle className="text-base">错误排行</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">错误排行</CardTitle>
+        </CardHeader>
         <CardContent>
           {errors.length > 0 ? (
             <div className="space-y-2">
               {errors.slice(0, 10).map((e, i) => (
-                <div key={i} className="flex items-center gap-3 text-sm py-2 border-b last:border-0">
+                <div
+                  key={i}
+                  className="flex items-center gap-3 text-sm py-2 border-b last:border-0"
+                >
                   <span className="w-6 text-center font-mono text-muted-foreground">{i + 1}</span>
                   <span className="flex-1 truncate text-red-600">{e.error_message || "-"}</span>
                   <span className="text-muted-foreground">{e.agent_id || ""}</span>
@@ -199,8 +245,10 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
+          ) : loading ? (
+            <LoadingState className="py-8" />
           ) : (
-            loading ? <LoadingState className="py-8" /> : <EmptyState text="暂无错误" className="py-8" />
+            <EmptyState text="暂无错误" className="py-8" />
           )}
         </CardContent>
       </Card>
@@ -208,14 +256,22 @@ export default function DashboardPage() {
   );
 }
 
-function StatCard({ title, value, loading, color }: { title: string; value: string | number; loading: boolean; color?: string }) {
+function StatCard({
+  title,
+  value,
+  loading,
+  color,
+}: {
+  title: string;
+  value: string | number;
+  loading: boolean;
+  color?: string;
+}) {
   return (
     <Card>
       <CardContent className="pt-6">
         <p className="text-xs text-muted-foreground mb-1">{title}</p>
-        <p className={`text-2xl font-bold ${color ?? ""}`}>
-          {loading ? "..." : value}
-        </p>
+        <p className={`text-2xl font-bold ${color ?? ""}`}>{loading ? "..." : value}</p>
       </CardContent>
     </Card>
   );
@@ -243,7 +299,12 @@ function scoreColor(v?: number): string {
   return "text-red-500";
 }
 
-function QualityOverviewCard({ quality, loading, seeding, onSeed }: {
+function QualityOverviewCard({
+  quality,
+  loading,
+  seeding,
+  onSeed,
+}: {
   quality: QualityOverview | null;
   loading: boolean;
   seeding: boolean;
