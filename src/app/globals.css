@@ -162,3 +162,36 @@
     animation: none;
   }
 }
+
+/* ===== 打印样式（SELFLOOP3 loop-330，工单 0458/0459）：评测报告打印友好 ===== */
+@media print {
+  /* 隐藏导航与侧边栏，主内容占满 */
+  aside,
+  header,
+  nav {
+    display: none !important;
+  }
+  main {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  /* 去背景与阴影省墨，白底黑字 */
+  body {
+    background: #fff !important;
+  }
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  /* 卡片免分页截断；表格行不跨页断开 */
+  [data-slot="card"],
+  .print-block {
+    break-inside: avoid;
+  }
+  tr,
+  td,
+  th {
+    break-inside: avoid;
+  }
+}
