@@ -8,10 +8,33 @@ import dynamic from "next/dynamic";
 
 // ECharts 懒加载（SELFLOOP3 loop-332，工单 0462/0463）：全量 ECharts 不进首屏
 // 关键 bundle；加载期同高度占位防布局跳动（对齐 agg-web ForceGraph2D 先例）。
-const ReactECharts = dynamic(() => import("echarts-for-react"), {
-  ssr: false,
-  loading: () => <div className="h-[280px] animate-pulse rounded-md bg-muted/40" />,
-});
+const ReactECharts = dynamic(
+  () =>
+    // echarts 按需注册（SELFLOOP3 loop-347，工单 0492/0493）：echarts-for-react 默认
+    // importStar 全量包不可摇；core + 本页所需（bar/line/pie + 网格/提示/图例/画布）。
+    Promise.all([
+      import("echarts-for-react/lib/core"),
+      import("echarts/core"),
+      import("echarts/charts"),
+      import("echarts/components"),
+      import("echarts/renderers"),
+    ]).then(([reactMod, echarts, charts, components, renderers]) => {
+      echarts.use([
+        charts.BarChart,
+        charts.LineChart,
+        charts.PieChart,
+        components.GridComponent,
+        components.TooltipComponent,
+        components.LegendComponent,
+        renderers.CanvasRenderer,
+      ]);
+      return reactMod;
+    }),
+  {
+    ssr: false,
+    loading: () => <div className="h-[280px] animate-pulse rounded-md bg-muted/40" />,
+  }
+);
 import {
   dashboardApi,
   evalApi,
