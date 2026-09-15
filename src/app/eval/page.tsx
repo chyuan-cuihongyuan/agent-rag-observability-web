@@ -76,6 +76,7 @@ export default function EvalPage() {
                     <th className="py-2">名称</th>
                     <th className="py-2">条目数</th>
                     <th className="py-2">创建时间</th>
+                    <th className="py-2">导出</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -118,7 +119,10 @@ export default function EvalPage() {
                 </thead>
                 <tbody>
                   {tasks.map((t) => (
-                    <tr key={t.taskId} className="border-b last:border-0 hover:bg-muted/50 cursor-pointer">
+                    <tr
+                      key={t.taskId}
+                      className="border-b last:border-0 hover:bg-muted/50 cursor-pointer"
+                    >
                       <td className="py-2">
                         <Link href={`/eval/${t.taskId}`} className="text-blue-600 hover:underline">
                           {t.taskName}
@@ -128,21 +132,57 @@ export default function EvalPage() {
                         <Badge variant="outline">{evalTypeLabel(t.evalType)}</Badge>
                       </td>
                       <td className="py-2">
-                        <Badge variant={t.status === "COMPLETED" ? "default" : t.status === "FAILED" ? "destructive" : "secondary"}>
+                        <Badge
+                          variant={
+                            t.status === "COMPLETED"
+                              ? "default"
+                              : t.status === "FAILED"
+                                ? "destructive"
+                                : "secondary"
+                          }
+                        >
                           {t.status}
                         </Badge>
                       </td>
                       <td className="py-2">
                         <div className="flex items-center gap-2">
-                          <span className={`font-mono font-bold ${listScoreColor(t.avgOverallScore)}`}>
-                            {t.avgOverallScore != null ? `${(t.avgOverallScore * 100).toFixed(1)}%` : "-"}
+                          <span
+                            className={`font-mono font-bold ${listScoreColor(t.avgOverallScore)}`}
+                          >
+                            {t.avgOverallScore != null
+                              ? `${(t.avgOverallScore * 100).toFixed(1)}%`
+                              : "-"}
                           </span>
                           {t.completedCount != null && t.completedCount > 0 && (
-                            <span className="text-xs text-muted-foreground">{t.completedCount} 条</span>
+                            <span className="text-xs text-muted-foreground">
+                              {t.completedCount} 条
+                            </span>
                           )}
                         </div>
                       </td>
                       <td className="py-2 text-xs text-muted-foreground">{t.createTime}</td>
+                      <td className="py-2 text-xs">
+                        {t.status === "COMPLETED" ? (
+                          <div className="flex gap-2">
+                            <a
+                              href={`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/eval/task/${t.taskId}/export`}
+                              download
+                              className="text-blue-600 hover:underline"
+                            >
+                              CSV
+                            </a>
+                            <a
+                              href={`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/eval/task/${t.taskId}/export.md`}
+                              download
+                              className="text-blue-600 hover:underline"
+                            >
+                              MD
+                            </a>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -185,9 +225,7 @@ function CreateDatasetDialog({ onCreated }: { onCreated: () => void }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" />}>
-        新建数据集
-      </DialogTrigger>
+      <DialogTrigger render={<Button size="sm" />}>新建数据集</DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>新建评测数据集</DialogTitle>
@@ -195,7 +233,11 @@ function CreateDatasetDialog({ onCreated }: { onCreated: () => void }) {
         <div className="space-y-4">
           <div>
             <Label>数据集名称</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="如：退款场景v2" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="如：退款场景v2"
+            />
           </div>
           <div>
             <Label>描述</Label>
@@ -219,7 +261,13 @@ function CreateDatasetDialog({ onCreated }: { onCreated: () => void }) {
   );
 }
 
-function CreateTaskDialog({ datasets, onCreated }: { datasets: EvalDatasetDetail[]; onCreated: () => void }) {
+function CreateTaskDialog({
+  datasets,
+  onCreated,
+}: {
+  datasets: EvalDatasetDetail[];
+  onCreated: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [taskName, setTaskName] = useState("");
   const [evalType, setEvalType] = useState("rag");
@@ -230,7 +278,13 @@ function CreateTaskDialog({ datasets, onCreated }: { datasets: EvalDatasetDetail
     if (!taskName || !datasetId) return;
     setSubmitting(true);
     try {
-      await evalApi.createTask({ taskName, evalType, datasetId, modelVersion: "", ragStrategyVersion: "" });
+      await evalApi.createTask({
+        taskName,
+        evalType,
+        datasetId,
+        modelVersion: "",
+        ragStrategyVersion: "",
+      });
       setOpen(false);
       setTaskName("");
       onCreated();
@@ -241,9 +295,7 @@ function CreateTaskDialog({ datasets, onCreated }: { datasets: EvalDatasetDetail
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" />}>
-        新建任务
-      </DialogTrigger>
+      <DialogTrigger render={<Button size="sm" />}>新建任务</DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>新建评测任务</DialogTitle>
@@ -251,7 +303,11 @@ function CreateTaskDialog({ datasets, onCreated }: { datasets: EvalDatasetDetail
         <div className="space-y-4">
           <div>
             <Label>任务名称</Label>
-            <Input value={taskName} onChange={(e) => setTaskName(e.target.value)} placeholder="如：退款场景回归测试" />
+            <Input
+              value={taskName}
+              onChange={(e) => setTaskName(e.target.value)}
+              placeholder="如：退款场景回归测试"
+            />
           </div>
           <div>
             <Label>评测类型</Label>
@@ -274,11 +330,17 @@ function CreateTaskDialog({ datasets, onCreated }: { datasets: EvalDatasetDetail
             >
               <option value="">选择数据集</option>
               {datasets.map((d) => (
-                <option key={d.datasetId} value={d.datasetId}>{d.datasetName}</option>
+                <option key={d.datasetId} value={d.datasetId}>
+                  {d.datasetName}
+                </option>
               ))}
             </select>
           </div>
-          <Button onClick={submit} disabled={submitting || !taskName || !datasetId} className="w-full">
+          <Button
+            onClick={submit}
+            disabled={submitting || !taskName || !datasetId}
+            className="w-full"
+          >
             {submitting ? "提交中..." : "创建"}
           </Button>
         </div>
